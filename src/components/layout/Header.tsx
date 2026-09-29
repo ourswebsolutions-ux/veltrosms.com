@@ -1,0 +1,44 @@
+import { PageContainer } from "@/components/ui/PageContainer";
+import { formatPrice } from "@/lib/format";
+import { getCurrentUser } from "@/server/auth/session";
+import { getAccountProfile } from "@/server/services/account.service";
+import { AccountBar } from "./AccountBar";
+import { LanguageMenu, NotificationsMenu, SoundToggle, ThemeToggle } from "./HeaderControls";
+import { Logo } from "./Logo";
+import { MobileNavbar } from "./MobileNavbar";
+import { Navbar } from "./Navbar";
+
+/**
+ * Sticky site header: white bar (logo, nav, controls) + brand account bar.
+ * Below lg the nav collapses into MobileNavbar and the account bar into a pill.
+ */
+export async function Header() {
+  const user = await getCurrentUser();
+  const profile = user ? await getAccountProfile(user) : null;
+
+  return (
+    <header className="sticky top-0 z-40 shadow-[0_2px_8px_rgba(34,37,45,0.06)]">
+      <div className="bg-surface">
+        <PageContainer className="flex h-14 items-center gap-3 sm:h-16 xl:gap-6">
+          <Logo />
+          <Navbar />
+          <div className="ml-auto flex items-center gap-2">
+            <LanguageMenu />
+            <ThemeToggle className="hidden lg:flex" />
+            <NotificationsMenu />
+            <SoundToggle className="hidden lg:flex" />
+            <MobileNavbar />
+          </div>
+        </PageContainer>
+      </div>
+      <AccountBar
+        user={
+          profile
+            ? { name: profile.name, email: profile.email, balance: formatPrice(profile.balance, profile.currency), isAdmin: user?.role === "admin" }
+            : null
+        }
+        guestBalance={formatPrice(0)}
+      />
+    </header>
+  );
+}

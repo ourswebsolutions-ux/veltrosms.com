@@ -1,0 +1,217 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { getAdminActor, type AdminActor } from "@/server/admin/guard";
+import { adminCancelOrder, adminRecheckPayment, adminRefreshOrder, resolvePaymentReview } from "@/server/admin/orders";
+import {
+  saveMaintenance,
+  savePricing,
+  saveManualPayment,
+  setCatalogItemActive,
+  setServicePopular,
+  triggerCatalogSync,
+} from "@/server/admin/platform";
+import { approveTopUp, rejectTopUp } from "@/server/admin/topups";
+import {
+  activateUser,
+  adjustUserWallet,
+  deleteUser,
+  forceLogout,
+  revokeUserApiKey,
+  sendUserPasswordReset,
+  setUserRole,
+  suspendUser,
+  updateUserProfile,
+  type AdminResult,
+} from "@/server/admin/users";
+import { hitRateLimit, RATE_LIMITS } from "@/server/auth/rate-limit";
+import type { FormState } from "@/types/forms";
+
+/**
+ * Admin mutations. Each one re-verifies the admin from the session (the role
+ * is re-read from the database), validates its input, and delegates to an
+ * audited admin service. Nothing from the form (role flags, user ids of the
+ * actor) is trusted beyond the target's id.
+ */
+
+const DENIED: FormState = { status: "error", message: "You don't have permission to do that." };
+const INVALID: FormState = { status: "error", message: "Invalid request." };
+
+const uuid = z.uuid();
+const intId = z.coerce.number().int().positive().max(2_147_483_647);
+const field = (data: FormData, name: string) => String(data.get(name) ?? "");
+
+async function run(fn: (actor: AdminActor) => Promise<AdminResult | FormState>): Promise<FormState> {
+  const actor = await getAdminActor();
+  if (!actor) return DENIED;
+  const limit = await hitRateLimit(`admin:actions:${actor.id}`, RATE_LIMITS.adminActionsPerAdmin);
+  if (!limit.allowed) return { status: "error", message: "Too many admin actions in a short time. Please wait a minute." };
+  try {
+    const r = await fn(actor);
+    if ("ok" in r) {
+      revalidatePath("/admin", "layout");
+      return { status: r.ok ? "success" : "error", message: r.message };
+    }
+    return r;
+  } catch (error) {
+    console.error("[admin] action failed:", error instanceof Error ? error.message : "unknown error");
+    return { status: "error", message: "Something went wrong. Nothing was changed." };
+  }
+}
+
+/* ----------------------------------------------------------------- users -- */
+
+export async function adminSuspendUserAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  return run((a) => suspendUser(a, id.data, field(data, "reason").slice(0, 400)));
+}
+
+export async function adminActivateUserAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  return run((a) => activateUser(a, id.data));
+}
+
+export async function adminEditUserAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  return run((a) => updateUserProfile(a, id.data, { name: field(data, "name").slice(0, 100), email: field(data, "email").slice(0, 254) }));
+}
+
+export async function adminPasswordResetAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  return run((a) => sendUserPasswordReset(a, id.data));
+}
+
+export async function adminDeleteUserAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  const state = await run((a) => deleteUser(a, id.data, field(data, "confirmEmail").slice(0, 254)));
+  // The account page no longer applies: go back to the list.
+  return state.status === "success" ? { ...state, redirectTo: "/admin/users?deleted=1" } : state;
+}
+
+export async function adminUserRoleAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  const role = z.enum(["user", "admin"]).safeParse(field(data, "role"));
+  if (!id.success || !role.success) return INVALID;
+  return run((a) => setUserRole(a, id.data, role.data));
+}
+
+export async function adminForceLogoutAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  return run((a) => forceLogout(a, id.data));
+}
+
+export async function adminRevokeApiKeyAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "userId"));
+  if (!id.success) return INVALID;
+  return run((a) => revokeUserApiKey(a, id.data));
+}
+
+const adjustSchema = z.object({
+  userId: z.uuid(),
+  direction: z.enum(["credit", "debit"], { error: "Choose add or deduct." }),
+  amount: z.string().trim().min(1, "Enter an amount.").max(20).regex(/^\d/, "Enter a positive amount; choose add or deduct above."),
+  reason: z.string().trim().min(5, "Give a reason (at least 5 characters).").max(200),
+  confirm: z.literal("on", { error: "Tick the confirmation box." }),
+  idempotencyKey: z.string().regex(/^[A-Za-z0-9_-]{16,64}$/),
+});
+
+export async function adminAdjustWalletAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const parsed = adjustSchema.safeParse(Object.fromEntries(data));
+  if (!parsed.success) {
+    const fieldErrors = Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message]));
+    return { status: "error", fieldErrors, values: { amount: field(data, "amount"), reason: field(data, "reason") } };
+  }
+  const { userId, amount, reason, idempotencyKey, direction } = parsed.data;
+  const state = await run((a) => adjustUserWallet(a, userId, { amount, reason, idempotencyKey, direction }));
+  return state.status === "error" ? { ...state, values: { amount, reason } } : state;
+}
+
+/* ------------------------------------------------------ orders & payments -- */
+
+export async function adminRefreshOrderAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "orderId"));
+  if (!id.success) return INVALID;
+  return run((a) => adminRefreshOrder(a, id.data));
+}
+
+export async function adminCancelOrderAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "orderId"));
+  if (!id.success) return INVALID;
+  return run((a) => adminCancelOrder(a, id.data));
+}
+
+export async function adminRecheckPaymentAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "paymentId"));
+  if (!id.success) return INVALID;
+  return run((a) => adminRecheckPayment(a, id.data));
+}
+
+export async function adminResolveReviewAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "paymentId"));
+  if (!id.success) return INVALID;
+  return run((a) => resolvePaymentReview(a, id.data, field(data, "note").slice(0, 400)));
+}
+
+/* --------------------------------------------------------------- catalog -- */
+
+export async function adminCatalogToggleAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const kind = z.enum(["country", "service"]).safeParse(field(data, "kind"));
+  const id = intId.safeParse(field(data, "id"));
+  const active = z.enum(["true", "false"]).safeParse(field(data, "active"));
+  if (!kind.success || !id.success || !active.success) return INVALID;
+  return run((a) => setCatalogItemActive(a, kind.data, id.data, active.data === "true"));
+}
+
+export async function adminServicePopularAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  const popular = z.enum(["true", "false"]).safeParse(field(data, "popular"));
+  if (!id.success || !popular.success) return INVALID;
+  return run((a) => setServicePopular(a, id.data, popular.data === "true"));
+}
+
+export async function adminCatalogSyncAction(_prev: FormState, _data: FormData): Promise<FormState> {
+  return run((a) => triggerCatalogSync(a));
+}
+
+/* -------------------------------------------------------------- settings -- */
+
+export async function adminSavePricingAction(_prev: FormState, data: FormData): Promise<FormState> {
+  return run((a) => savePricing(a, { markupPercent: field(data, "markupPercent"), minMargin: field(data, "minMargin") }));
+}
+
+export async function adminSaveMaintenanceAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const enabled = data.get("enabled") === "on";
+  return run((a) => saveMaintenance(a, { enabled, message: field(data, "message").slice(0, 300) }));
+}
+
+export async function adminSaveManualPaymentAction(_prev: FormState, data: FormData): Promise<FormState> {
+  return run((a) =>
+    saveManualPayment(a, {
+      accountName: field(data, "accountName").slice(0, 80),
+      accountNumber: field(data, "accountNumber").slice(0, 20),
+      whatsapp: field(data, "whatsapp").slice(0, 20) || null,
+      note: field(data, "note").slice(0, 200),
+    }),
+  );
+}
+
+/* ------------------------------------------------------- manual top-ups -- */
+
+export async function adminApproveTopUpAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "paymentId"));
+  if (!id.success) return INVALID;
+  return run((a) => approveTopUp(a, id.data));
+}
+
+export async function adminRejectTopUpAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = uuid.safeParse(field(data, "paymentId"));
+  if (!id.success) return INVALID;
+  return run((a) => rejectTopUp(a, id.data, field(data, "reason").slice(0, 400)));
+}

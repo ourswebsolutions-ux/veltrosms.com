@@ -1,0 +1,560 @@
+// rockSMS database schema (MySQL / MariaDB).
+//
+// Money: DECIMAL(18,4) in the platform currency (or provider currency where
+// noted). Application code converts to integer ten-thousandths (see
+// src/lib/money.ts) and never uses floating point for amounts.
+//
+// Change the schema → `npm run db:migrate:dev -- --name <change>`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/**
+ * ------------------------------------------------------------------ users --
+ */
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  /// Locked out by an administrator (sessions and API keys stop working). History is kept.
+  SUSPENDED
+}
+
+model User {
+  id                String     @id @default(uuid()) @db.Char(36)
+  name              String     @db.VarChar(100)
+  /// Always stored lower-cased and trimmed.
+  email             String     @unique @db.VarChar(254)
+  /// scrypt hash (src/server/auth/password.ts). Never plaintext.
+  passwordHash      String     @map("password_hash") @db.VarChar(255)
+  role              UserRole   @default(USER)
+  status            UserStatus @default(ACTIVE)
+  /// Set when the address is confirmed (link in the verification email).
+  emailVerifiedAt   DateTime?  @map("email_verified_at")
+  /// Sessions created before this instant are rejected.
+  passwordChangedAt DateTime   @default(now()) @map("password_changed_at")
+  /// SHA-256 of the user's API key; the key itself is shown once.
+  apiKeyHash        String?    @unique @map("api_key_hash") @db.Char(64)
+  /// Last characters of the key, for display ("rk_…a1b2").
+  apiKeyHint        String?    @map("api_key_hint") @db.VarChar(16)
+  apiKeyCreatedAt   DateTime?  @map("api_key_created_at")
+  /// Last suspension: why, by which administrator, and when (kept after re-activation for history).
+  suspensionReason  String?    @map("suspension_reason") @db.VarChar(300)
+  suspendedById     String?    @map("suspended_by_id") @db.Char(36)
+  suspendedAt       DateTime?  @map("suspended_at")
+  /// Set when an administrator deleted the account; personal data is then anonymized.
+  deletedAt         DateTime?  @map("deleted_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  sessions     Session[]
+  authTokens   AuthToken[]
+  wallet       Wallet?
+  orders       Order[]
+  transactions Transaction[]
+  applications PartnerApplication[]
+  payments     Payment[]
+
+  @@index([role])
+  @@index([status, createdAt])
+  @@map("users")
+}
+
+/// Server-side sessions; the cookie holds a random token, only its hash is stored.
+model Session {
+  id         String   @id @default(uuid()) @db.Char(36)
+  userId     String   @map("user_id") @db.Char(36)
+  tokenHash  String   @unique @map("token_hash") @db.Char(64)
+  persistent Boolean  @default(false)
+  ip         String?  @db.VarChar(64)
+  userAgent  String?  @map("user_agent") @db.VarChar(300)
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+  expiresAt  DateTime @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+enum AuthTokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  /// Confirms a new address before it replaces the account email.
+  EMAIL_CHANGE
+}
+
+/// Single-use, expiring email-link tokens. Only hashes are stored.
+model AuthToken {
+  id        String           @id @default(uuid()) @db.Char(36)
+  userId    String           @map("user_id") @db.Char(36)
+  purpose   AuthTokenPurpose
+  tokenHash String           @unique @map("token_hash") @db.Char(64)
+  /// EMAIL_CHANGE only: the address being confirmed (normalized).
+  newEmail  String?          @map("new_email") @db.VarChar(254)
+  expiresAt DateTime         @map("expires_at")
+  usedAt    DateTime?        @map("used_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@map("auth_tokens")
+}
+
+/// Fixed-window counters shared by all app instances.
+model RateLimit {
+  key     String   @id @db.VarChar(191)
+  count   Int
+  resetAt DateTime @map("reset_at")
+
+  @@map("rate_limits")
+}
+
+/**
+ * ---------------------------------------------------------------- catalog --
+ */
+
+model Country {
+  id             Int      @id @default(autoincrement())
+  /// Which upstream provider this row came from, and its identifier there.
+  provider       String   @db.VarChar(32)
+  providerCode   String   @map("provider_code") @db.VarChar(32)
+  name           String   @db.VarChar(120)
+  /// ISO 3166-1 alpha-2 (lower case) when it can be determined; used for flags.
+  iso2           String?  @db.Char(2)
+  dialCode       String?  @map("dial_code") @db.VarChar(8)
+  /// Admin switch (never changed by provider syncs).
+  isActive       Boolean  @default(true) @map("is_active")
+  /// Provider-side availability, refreshed by every sync.
+  providerActive Boolean  @default(true) @map("provider_active")
+  displayOrder   Int      @default(1000) @map("display_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  prices Price[]
+  orders Order[]
+
+  @@unique([provider, providerCode])
+  @@index([isActive, providerActive, displayOrder])
+  @@map("countries")
+}
+
+model Service {
+  id             Int      @id @default(autoincrement())
+  provider       String   @db.VarChar(32)
+  providerCode   String   @map("provider_code") @db.VarChar(32)
+  /// Our public identifier, used in URLs and the API.
+  slug           String   @unique @db.VarChar(64)
+  name           String   @db.VarChar(120)
+  isPopular      Boolean  @default(false) @map("is_popular")
+  /// Admin switch (never changed by provider syncs).
+  isActive       Boolean  @default(true) @map("is_active")
+  /// Provider-side availability, refreshed by every sync.
+  providerActive Boolean  @default(true) @map("provider_active")
+  displayOrder   Int      @default(1000) @map("display_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  prices Price[]
+  orders Order[]
+
+  @@unique([provider, providerCode])
+  @@index([isActive, providerActive, isPopular, displayOrder])
+  @@map("services")
+}
+
+/// Current offer for a service in a country, refreshed from the provider.
+model Price {
+  id               Int      @id @default(autoincrement())
+  serviceId        Int      @map("service_id")
+  countryId        Int      @map("country_id")
+  /// What the provider charges us, in providerCurrency.
+  providerCost     Decimal  @map("provider_cost") @db.Decimal(18, 4)
+  providerCurrency String   @map("provider_currency") @db.Char(3)
+  /// What the customer pays, in currency. Derived from cost + markup unless overridden.
+  price            Decimal  @db.Decimal(18, 4)
+  currency         String   @db.Char(3)
+  /// Manual customer price set by an admin (future); wins over the computed one.
+  priceOverride    Decimal? @map("price_override") @db.Decimal(18, 4)
+  available        Int      @default(0)
+  isActive         Boolean  @default(true) @map("is_active")
+  syncedAt         DateTime @map("synced_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, countryId])
+  @@index([countryId])
+  @@map("prices")
+}
+
+/**
+ * ----------------------------------------------------------------- wallet --
+ */
+
+model Wallet {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @unique @map("user_id") @db.Char(36)
+  /// Never negative (CHECK constraint in the migration).
+  balance   Decimal  @default(0) @db.Decimal(18, 4)
+  currency  String   @db.Char(3)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+enum TransactionType {
+  DEPOSIT
+  PURCHASE
+  REFUND
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+/// Append-only ledger (UPDATE/DELETE blocked by triggers, except finalizing
+/// a PENDING row's status). Amount is signed: credits > 0, debits < 0.
+model Transaction {
+  id            String            @id @default(uuid()) @db.Char(36)
+  walletId      String            @map("wallet_id") @db.Char(36)
+  userId        String            @map("user_id") @db.Char(36)
+  type          TransactionType
+  status        TransactionStatus @default(COMPLETED)
+  amount        Decimal           @db.Decimal(18, 4)
+  currency      String            @db.Char(3)
+  balanceBefore Decimal           @map("balance_before") @db.Decimal(18, 4)
+  balanceAfter  Decimal           @map("balance_after") @db.Decimal(18, 4)
+  /// Idempotency key: the same operation can never be recorded twice.
+  reference     String            @unique @db.VarChar(191)
+  description   String?           @db.VarChar(255)
+  orderId       String?           @map("order_id") @db.Char(36)
+  /// Top-up that produced this entry (DEPOSIT rows).
+  paymentId     String?           @map("payment_id") @db.Char(36)
+  /// Who/what caused it (e.g. admin id for adjustments). Never shown to users.
+  metadata      Json?
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  wallet  Wallet   @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([walletId, createdAt])
+  @@index([userId, type, createdAt])
+  @@index([orderId])
+  @@index([paymentId])
+  @@map("transactions")
+}
+
+/**
+ * ----------------------------------------------------------------- orders --
+ */
+
+enum OrderStatus {
+  PENDING
+  ACTIVE
+  SMS_RECEIVED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  FAILED
+  EXPIRED
+}
+
+model Order {
+  id                   String      @id @default(uuid()) @db.Char(36)
+  userId               String      @map("user_id") @db.Char(36)
+  serviceId            Int         @map("service_id")
+  countryId            Int         @map("country_id")
+  provider             String      @db.VarChar(32)
+  providerActivationId String?     @map("provider_activation_id") @db.VarChar(64)
+  phoneNumber          String?     @map("phone_number") @db.VarChar(32)
+  status               OrderStatus @default(PENDING)
+  /// Charged to the customer, in currency.
+  price                Decimal     @db.Decimal(18, 4)
+  currency             String      @db.Char(3)
+  /// Provider's charge to us, as reported at purchase.
+  providerCost         Decimal?    @map("provider_cost") @db.Decimal(18, 4)
+  providerCurrency     String?     @map("provider_currency") @db.Char(3)
+  /// Client-supplied key: a repeated submit returns the same order.
+  idempotencyKey       String      @map("idempotency_key") @db.VarChar(64)
+  canGetAnotherSms     Boolean     @default(false) @map("can_get_another_sms")
+  cancelableAt         DateTime?   @map("cancelable_at")
+  expiresAt            DateTime?   @map("expires_at")
+  lastCheckedAt        DateTime?   @map("last_checked_at")
+  failureReason        String?     @map("failure_reason") @db.VarChar(255)
+  completedAt          DateTime?   @map("completed_at")
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  service      Service       @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  country      Country       @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  sms          Sms[]
+  transactions Transaction[]
+
+  @@unique([userId, idempotencyKey])
+  @@unique([provider, providerActivationId])
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+enum SmsStatus {
+  RECEIVED
+}
+
+model Sms {
+  id          String    @id @default(uuid()) @db.Char(36)
+  orderId     String    @map("order_id") @db.Char(36)
+  sender      String?   @db.VarChar(64)
+  text        String    @db.Text
+  code        String?   @db.VarChar(32)
+  status      SmsStatus @default(RECEIVED)
+  /// Provider's identity for this message (dedupes repeated polls).
+  providerRef String    @map("provider_ref") @db.VarChar(128)
+  receivedAt  DateTime  @map("received_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, providerRef])
+  @@map("sms_messages")
+}
+
+/**
+ * ------------------------------------------------------ partners / ops ----
+ */
+
+enum PartnerKind {
+  PROVIDER
+  SOFTWARE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// "Earn with us" / software partner applications.
+model PartnerApplication {
+  id               String            @id @default(uuid()) @db.Char(36)
+  userId           String?           @map("user_id") @db.Char(36)
+  kind             PartnerKind
+  contactEmail     String            @map("contact_email") @db.VarChar(254)
+  contactMessenger String?           @map("contact_messenger") @db.VarChar(100)
+  details          String?           @db.Text
+  status           ApplicationStatus @default(PENDING)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("partner_applications")
+}
+
+/// Every outbound provider call, for support and reconciliation. Credentials
+/// are never stored; response bodies only for failures (truncated).
+model ProviderRequest {
+  id            BigInt   @id @default(autoincrement())
+  provider      String   @db.VarChar(32)
+  action        String   @db.VarChar(64)
+  orderId       String?  @map("order_id") @db.Char(36)
+  userId        String?  @map("user_id") @db.Char(36)
+  /// Provider-side reference (e.g. activation id) when known.
+  providerRef   String?  @map("provider_ref") @db.VarChar(64)
+  params        Json?
+  success       Boolean  @default(false)
+  /// Our error category (UNAUTHORIZED, NO_NUMBERS, TIMEOUT, …).
+  errorCategory String?  @map("error_category") @db.VarChar(32)
+  /// Provider's raw error code, e.g. BAD_KEY.
+  errorCode     String?  @map("error_code") @db.VarChar(64)
+  response      String?  @db.Text
+  httpStatus    Int?     @map("http_status")
+  durationMs    Int      @map("duration_ms")
+  attempt       Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([orderId])
+  @@index([action, success, createdAt])
+  @@map("provider_requests")
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+model SystemLog {
+  id        BigInt   @id @default(autoincrement())
+  level     LogLevel
+  source    String   @db.VarChar(64)
+  message   String   @db.VarChar(500)
+  context   Json?
+  userId    String?  @map("user_id") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([source, createdAt])
+  @@map("system_logs")
+}
+
+/// Key/value application settings (catalog sync state, feature switches).
+model Setting {
+  key       String   @id @db.VarChar(64)
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+/**
+ * ---------------------------------------------------------------- payments --
+ */
+
+enum PaymentStatus {
+  /// Created; waiting for the customer to pay at the provider.
+  PENDING
+  /// The provider reports the payment is being processed.
+  PROCESSING
+  /// Verified with the provider and credited to the wallet (exactly once).
+  PAID
+  FAILED
+  CANCELLED
+  EXPIRED
+  /// Returned to the customer by the provider after being paid.
+  REFUNDED
+  /// Manual top-up refused by an administrator (never credited).
+  REJECTED
+}
+
+/// A wallet top-up. The wallet is credited only after the provider's own
+/// status confirms payment (webhook, return page and reconciliation all
+/// re-check with the provider); the credit's ledger reference is unique.
+model Payment {
+  id                String        @id @default(uuid()) @db.Char(36)
+  /// Short public reference shown to the customer and sent to the provider.
+  reference         String        @unique @db.VarChar(32)
+  userId            String        @map("user_id") @db.Char(36)
+  provider          String        @db.VarChar(32)
+  method            String        @db.VarChar(32)
+  status            PaymentStatus @default(PENDING)
+  /// Credited to the wallet.
+  amount            Decimal       @db.Decimal(18, 4)
+  fee               Decimal       @db.Decimal(18, 4)
+  /// Charged by the provider: amount + fee (CHECK constraint).
+  total             Decimal       @db.Decimal(18, 4)
+  currency          String        @db.Char(3)
+  providerPaymentId String?       @map("provider_payment_id") @db.VarChar(191)
+  /// Where the customer completes the payment (provider-hosted page).
+  checkoutUrl       String?       @map("checkout_url") @db.VarChar(1024)
+  /// Client-supplied key: a repeated submit returns the same payment.
+  idempotencyKey    String        @map("idempotency_key") @db.VarChar(64)
+  /// Set when the provider's answer doesn't match (amount/currency) — never credited automatically.
+  needsReview       Boolean       @default(false) @map("needs_review")
+  failureReason     String?       @map("failure_reason") @db.VarChar(255)
+  expiresAt         DateTime?     @map("expires_at")
+  lastCheckedAt     DateTime?     @map("last_checked_at")
+  paidAt            DateTime?     @map("paid_at")
+  failedAt          DateTime?     @map("failed_at")
+  /// Manual top-ups: the administrator who approved/rejected it, when, and why (rejections).
+  reviewedById      String?       @map("reviewed_by_id") @db.Char(36)
+  reviewedAt        DateTime?     @map("reviewed_at")
+  rejectionReason   String?       @map("rejection_reason") @db.VarChar(300)
+  /// Non-secret provider details useful for support (never credentials).
+  metadata          Json?
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+  events       PaymentEvent[]
+
+  @@unique([userId, idempotencyKey])
+  @@unique([provider, providerPaymentId])
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([provider, status, createdAt])
+  @@map("payments")
+}
+
+/// Webhook deliveries, deduplicated by the provider's event id.
+model PaymentEvent {
+  id          String    @id @default(uuid()) @db.Char(36)
+  provider    String    @db.VarChar(32)
+  eventId     String    @map("event_id") @db.VarChar(191)
+  type        String    @db.VarChar(64)
+  paymentId   String?   @map("payment_id") @db.Char(36)
+  /// Set once the event was handled; unhandled events are processed again on redelivery.
+  processedAt DateTime? @map("processed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, eventId])
+  @@index([paymentId])
+  @@map("payment_events")
+}
+
+/**
+ * ------------------------------------------------------------------ audit --
+ */
+
+/// Sensitive administrator actions (and their outcome). Append-only: the
+/// migration adds triggers that block UPDATE and DELETE. Metadata never holds
+/// passwords, keys or tokens.
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  /// The admin who acted (null for system actions).
+  actorId     String?  @map("actor_id") @db.Char(36)
+  actorEmail  String?  @map("actor_email") @db.VarChar(254)
+  action      String   @db.VarChar(64)
+  targetType  String?  @map("target_type") @db.VarChar(32)
+  targetId    String?  @map("target_id") @db.VarChar(64)
+  /// Human-readable summary, e.g. "Suspended user a@b.c: chargeback".
+  description String?  @db.VarChar(255)
+  success     Boolean
+  metadata    Json?
+  ip          String?  @db.VarChar(64)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}

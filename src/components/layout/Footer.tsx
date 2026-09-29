@@ -1,0 +1,67 @@
+import Link from "next/link";
+import { PageContainer } from "@/components/ui/PageContainer";
+import { footerAccountNav, footerNav, legalNav, siteConfig } from "@/config/site";
+import { Logo } from "./Logo";
+
+/**
+ * Three rows, following the reference's information architecture:
+ * brand + tagline · product links (+ account links) · legal line.
+ */
+export function Footer() {
+  return (
+    <footer className="mt-10 bg-surface">
+      <PageContainer>
+        <div className="flex flex-col gap-3 border-b border-line py-6 sm:flex-row sm:items-center sm:gap-8">
+          <Logo />
+          <p className="max-w-60 text-[15px] leading-snug font-medium text-primary">{siteConfig.tagline}</p>
+          <a
+            href={`mailto:${siteConfig.supportEmail}`}
+            className="text-sm text-fg-muted hover:text-primary sm:ml-auto"
+          >
+            {siteConfig.supportEmail}
+          </a>
+        </div>
+
+        <div className="grid gap-6 border-b border-line py-6 lg:grid-cols-[1fr_auto] lg:items-center">
+          <nav aria-label="Footer">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-between lg:gap-x-10">
+              {footerNav.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="text-lg text-fg-muted transition-colors hover:text-primary">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label="Account" className="lg:border-l lg:border-line lg:pl-10">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2">
+              {footerAccountNav.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="text-sm text-fg-muted transition-colors hover:text-primary">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+
+        <div className="flex flex-col gap-3 py-5 text-[13px] text-fg-muted lg:flex-row lg:items-center lg:justify-between">
+          <p>
+            © {new Date().getFullYear()} {siteConfig.name}. {siteConfig.legalEntity}
+          </p>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2">
+            {legalNav.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="text-primary hover:underline">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </PageContainer>
+    </footer>
+  );
+}

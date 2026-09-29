@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/* Theme is driven by the data-theme attribute on <html>, not the OS preference. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------------------------------------------------------------------------
+ * Design tokens
+ * Light values on :root, dark values on [data-theme="dark"].
+ * Components only ever reference the semantic Tailwind names below.
+ * ------------------------------------------------------------------------- */
+:root {
+  /* Brand: deep navy (primary) and metallic gold (accent), from the logo. */
+  --color-primary: #0f3b6a;
+  --color-primary-hover: #0b2f56;
+  --color-primary-soft: #2a5585; /* account-bar tabs */
+  --color-primary-tint: #eaf0f7; /* selected rows, soft buttons */
+  --color-primary-tint-border: #b9cbe0;
+  --color-primary-selected: #d3e0ee; /* selected service tile */
+  --color-accent: #c19b4c;
+  --color-accent-hover: #a9853d;
+  --color-accent-tint: #f8f1e3;
+
+  --color-page: #f4f4f4;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f5f5; /* inputs, list rows */
+  --color-surface-sunken: #ededed;
+
+  --color-fg: #22252d;
+  --color-fg-muted: #6b6f7b;
+  --color-fg-subtle: #9a9da6;
+
+  --color-line: #e5e7eb;
+  --color-line-strong: #d5d8de;
+
+  --color-success: #2eb872;
+  --color-success-tint: #eaf4dd;
+  --color-warning: #f5c125;
+  --color-danger: #ef4444;
+  --color-danger-tint: #fdecec;
+
+  --shadow-card: 0 2px 12px rgba(34, 37, 45, 0.06);
+  --shadow-pop: 0 8px 30px rgba(34, 37, 45, 0.14);
+}
+
+[data-theme="dark"] {
+  /* Navy is too dark on dark surfaces: a lighter navy keeps contrast with white text. */
+  --color-primary: #3a6fae;
+  --color-primary-hover: #4a80c0;
+  --color-primary-soft: #1e3a5c;
+  --color-primary-tint: #12263e;
+  --color-primary-tint-border: #29476d;
+  --color-primary-selected: #1b3656;
+  --color-accent: #d2ae62;
+  --color-accent-hover: #e0bf77;
+  --color-accent-tint: #2c2515;
+
+  --color-page: #07111d;
+  --color-surface: #0d1b2b;
+  --color-surface-muted: #13243a;
+  --color-surface-sunken: #1a2f48;
+
+  --color-fg: #eef2f7;
+  --color-fg-muted: #a3b1c2;
+  --color-fg-subtle: #6f8096;
+
+  --color-line: #1f3550;
+  --color-line-strong: #2b4666;
+
+  --color-success-tint: #253e05;
+  --color-danger-tint: #3d1515;
+
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+@theme inline {
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-tint: var(--color-primary-tint);
+  --color-primary-tint-border: var(--color-primary-tint-border);
+  --color-primary-selected: var(--color-primary-selected);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-tint: var(--color-accent-tint);
+  --color-page: var(--color-page);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-subtle: var(--color-fg-subtle);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-success: var(--color-success);
+  --color-success-tint: var(--color-success-tint);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+  --color-danger-tint: var(--color-danger-tint);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+
+  --radius-card: 16px;
+  --radius-control: 8px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--color-page);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@layer components {
+  /* Dropdown/popover entrance: short and subtle. */
+  .animate-pop {
+    animation: pop-in 120ms ease-out;
+  }
+
+  /* Thin scrollbar for internally scrolling panels (sidebar country list). */
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
