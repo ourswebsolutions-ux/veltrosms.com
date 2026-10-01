@@ -64,8 +64,8 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps<"/ad
           { header: "User", cell: (p) => <Link href={`/admin/users/${p.user.id}`} className="block max-w-48 truncate hover:text-primary">{p.user.email}</Link> },
           { header: "Method", desktopOnly: true, cell: (p) => `${p.provider} · ${p.method}` },
           { header: "Status", cell: (p) => <PaymentStatusBadge status={p.status} manual={p.provider === "manual"} /> },
-          { header: "Amount", className: "text-right tabular-nums", cell: (p) => formatPrice(p.amount, p.currency) },
-          { header: "Fee", className: "text-right tabular-nums text-fg-muted", desktopOnly: true, cell: (p) => formatPrice(p.fee, p.currency) },
+          { header: "Amount", className: "text-end tabular-nums", cell: (p) => formatPrice(p.amount, p.currency) },
+          { header: "Fee", className: "text-end tabular-nums text-fg-muted", desktopOnly: true, cell: (p) => formatPrice(p.fee, p.currency) },
           { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (p) => formatShortDateTime(p.createdAt) },
         ]}
       />

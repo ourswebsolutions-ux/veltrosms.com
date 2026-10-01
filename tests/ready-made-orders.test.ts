@@ -204,11 +204,11 @@ describe("Ready Made Accounts — customer side", () => {
     await expect(db().readyMadeOrder.delete({ where: { id: r.orderId } })).rejects.toThrow();
   });
 
-  it("WhatsApp contact defaults to 03246623395 and carries the order reference", async () => {
+  it("WhatsApp contact defaults to +923024966223 and carries the order reference", async () => {
     const c = await readyMadeContact();
-    expect(c).toEqual({ whatsapp: "03246623395", whatsappDigits: "923246623395" });
+    expect(c).toEqual({ whatsapp: "+923024966223", whatsappDigits: "923024966223" });
     const href = readyMadeWhatsappHref(c.whatsappDigits, { reference: "RM-ABCDEFGH", service: "Whatsapp", country: null, email: "a@b.test" });
-    expect(href.startsWith("https://wa.me/923246623395?text=")).toBe(true);
+    expect(href.startsWith("https://wa.me/923024966223?text=")).toBe(true);
     const text = decodeURIComponent(href.split("text=")[1]);
     expect(text).toContain("Order: RM-ABCDEFGH");
     expect(text).toContain("Country: All countries");

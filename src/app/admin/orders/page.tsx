@@ -66,8 +66,8 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           { header: "Service", cell: (o) => <span className="block max-w-56 truncate">{o.service.name} · {o.country.name}</span> },
           { header: "Number", className: "font-mono text-xs whitespace-nowrap", desktopOnly: true, cell: (o) => (o.phoneNumber ? formatPhone(o.phoneNumber) : "—") },
           { header: "Status", cell: (o) => <OrderStatus status={o.status} /> },
-          { header: "SMS", className: "text-right tabular-nums", desktopOnly: true, cell: (o) => o.smsCount },
-          { header: "Amount", className: "text-right tabular-nums", cell: (o) => formatPrice(o.price, o.currency) },
+          { header: "SMS", className: "text-end tabular-nums", desktopOnly: true, cell: (o) => o.smsCount },
+          { header: "Amount", className: "text-end tabular-nums", cell: (o) => formatPrice(o.price, o.currency) },
           { header: "Created", className: "whitespace-nowrap text-fg-muted", cell: (o) => formatShortDateTime(o.createdAt) },
           { header: "Closed", className: "whitespace-nowrap text-fg-muted", desktopOnly: true, cell: (o) => (o.completedAt ? formatShortDateTime(o.completedAt) : "—") },
         ]}

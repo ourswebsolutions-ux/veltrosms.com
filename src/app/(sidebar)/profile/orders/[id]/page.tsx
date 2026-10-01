@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Money } from "@/components/currency/DisplayCurrency";
 import { notFound } from "next/navigation";
 import { NumberCard } from "@/components/orders/NumberCard";
-import { ORDER_STATUS, OrderStatus } from "@/components/orders/OrderStatus";
-import { TRANSACTION_LABEL } from "@/components/profile/TransactionsTable";
+import { OrderStatus } from "@/components/orders/OrderStatus";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -12,12 +11,17 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPhone } from "@/lib/format";
+import { formatPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getOrderDetail } from "@/server/services/order.service";
 import { ACTIVE_ORDER_STATUSES } from "@/types/account";
+import { getT } from "@/i18n/server";
+import { ORDER_STATUS, TRANSACTION_TYPE } from "@/i18n/labels";
+import { DateTime } from "@/components/ui/DateTime";
 
-export const metadata: Metadata = { title: "Order details" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("order.detailsTitle") };
+}
 
 /** One of the signed-in user's orders. Anyone else's id is a plain 404. */
 export default async function OrderPage({ params }: PageProps<"/profile/orders/[id]">) {
@@ -28,57 +32,58 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
   if (!detail) notFound();
   const { order, ledger } = detail;
   const live = ACTIVE_ORDER_STATUSES.includes(order.status);
+  const t = await getT();
 
   const rows: [string, React.ReactNode][] = [
     [
-      "Order ID",
+      t("order.orderId"),
       <span key="id" className="inline-flex items-center gap-1 font-mono text-sm break-all">
         {order.id}
-        <CopyButton value={order.id} label="Copy order ID" className="size-6 shrink-0" />
+        <CopyButton value={order.id} label={t("order.copyId")} className="size-6 shrink-0" />
       </span>,
     ],
     [
-      "Service",
+      t("common.service"),
       <span key="svc" className="inline-flex items-center gap-2">
         <ServiceAvatar name={order.service.name} color={order.service.color} logo={order.service.logo} size={20} />
         {order.service.name}
       </span>,
     ],
     [
-      "Country",
+      t("common.country"),
       <span key="cty" className="inline-flex items-center gap-2">
         <CountryFlag iso2={order.country.iso2} />
         {order.country.name}
       </span>,
     ],
     [
-      "Number",
+      t("common.number"),
       order.phoneNumber ? (
         <span key="num" className="inline-flex items-center gap-1 font-mono">
           {formatPhone(order.phoneNumber)}
-          <CopyButton value={order.phoneNumber} label="Copy number" className="size-6" />
+          <CopyButton value={order.phoneNumber} label={t("order.copyNumber")} className="size-6" />
         </span>
       ) : (
-        "Not assigned"
+        t("order.notAssigned")
       ),
     ],
-    ["Price", <Money key="price" amount={order.price} currency={order.currency} variant="both" className="font-medium tabular-nums" />],
-    ["Status", <OrderStatus key="status" status={order.status} />],
-    ["Created", formatDateTime(order.createdAt)],
+    [t("common.price"), <Money key="price" amount={order.price} currency={order.currency} variant="both" className="font-medium tabular-nums" />],
+    [t("common.status"), <OrderStatus key="status" status={order.status} />],
+    [t("order.created"), <DateTime key="created" iso={order.createdAt} />],
   ];
-  if (order.completedAt) rows.push([order.status === "completed" ? "Completed" : "Closed", formatDateTime(order.completedAt)]);
-  if (live && order.expiresAt) rows.push(["Expires", formatDateTime(order.expiresAt)]);
+  if (order.completedAt) rows.push([order.status === "completed" ? t("order.status.completed") : t("order.closed"), <DateTime key="done" iso={order.completedAt} />]);
+  if (live && order.expiresAt) rows.push([t("order.expires"), <DateTime key="exp" iso={order.expiresAt} />]);
 
   return (
     <>
       <Card>
-        <Breadcrumbs items={[{ label: "Orders", href: "/profile/history?tab=orders" }, { label: `#${order.id.slice(0, 8)}` }]} className="mb-3" />
+        <Breadcrumbs items={[{ label: t("order.orders"), href: "/profile/history?tab=orders" }, { label: `#${order.id.slice(0, 8)}` }]} className="mb-3" />
         <PageHeader
           title={`${order.service.name} · ${order.country.name}`}
-          description={ORDER_STATUS[order.status].description}
+          description={t(ORDER_STATUS[order.status].description)}
           actions={
             <ButtonLink href="/price" size="sm" variant="outline">
-              Get another number
+              {t("order.getAnother")}
             </ButtonLink>
           }
         />
@@ -94,29 +99,31 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
       </Card>
 
       <Card>
-        <PageHeader as="h2" title="SMS messages" description="Messages received on this number for this order." />
+        <PageHeader as="h2" title={t("order.smsTitle")} description={t("order.smsIntro")} />
         {order.messages.length === 0 ? (
           <EmptyState
             compact
             icon="message"
-            title="No SMS received"
-            description={live ? "Messages appear here as soon as they arrive." : "No message arrived for this activation."}
+            title={t("order.noSms")}
+            description={live ? t("order.noSmsLive") : t("order.noSmsClosed")}
           />
         ) : (
           <ol className="space-y-2">
             {order.messages.map((m) => (
               <li key={m.id} className="rounded-xl border border-line p-3">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-fg-muted">
-                  <span className="font-medium text-fg">{m.sender ?? order.service.name}</span>
-                  <time dateTime={m.receivedAt}>{formatDateTime(m.receivedAt)}</time>
+                  <bdi className="font-medium text-fg">{m.sender ?? order.service.name}</bdi>
+                  <DateTime iso={m.receivedAt} />
                   {m.code && (
-                    <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-success-tint px-2 py-0.5 font-mono text-[15px] font-bold text-success">
-                      {m.code}
-                      <CopyButton value={m.code} label="Copy code" className="size-6" />
+                    <span className="ms-auto inline-flex items-center gap-1 rounded-md bg-success-tint px-2 py-0.5 font-mono text-[15px] font-bold text-success">
+                      <bdi>{m.code}</bdi>
+                      <CopyButton value={m.code} label={t("order.copyCode")} className="size-6" />
                     </span>
                   )}
                 </div>
-                <p className="mt-1.5 text-[15px] break-words">{m.text}</p>
+                <p dir="auto" className="mt-1.5 text-[15px] break-words">
+                  {m.text}
+                </p>
               </li>
             ))}
           </ol>
@@ -124,19 +131,21 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
       </Card>
 
       <Card>
-        <PageHeader as="h2" title="Payments for this order" description="Charges and refunds from your balance." />
+        <PageHeader as="h2" title={t("order.paymentsTitle")} description={t("order.paymentsIntro")} />
         {ledger.length === 0 ? (
-          <EmptyState compact icon="wallet" title="No balance movements" description="Nothing was charged for this order." />
+          <EmptyState compact icon="wallet" title={t("order.noMovements")} description={t("order.noMovementsHint")} />
         ) : (
           <ul className="divide-y divide-line">
-            {ledger.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 py-2.5">
+            {ledger.map((row) => (
+              <li key={row.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="font-medium">{TRANSACTION_LABEL[t.type]}</p>
-                  <p className="text-[13px] text-fg-muted">{formatDateTime(t.createdAt)}</p>
+                  <p className="font-medium">{t(TRANSACTION_TYPE[row.type])}</p>
+                  <p className="text-[13px] text-fg-muted">
+                    <DateTime iso={row.createdAt} />
+                  </p>
                 </div>
-                <span className={cn("font-medium tabular-nums", t.amount >= 0 ? "text-success" : "text-fg")}>
-                  <Money amount={t.amount} currency={order.currency} signed variant="stack" className="items-end" />
+                <span className={cn("font-medium tabular-nums", row.amount >= 0 ? "text-success" : "text-fg")}>
+                  <Money amount={row.amount} currency={order.currency} signed variant="stack" className="items-end" />
                 </span>
               </li>
             ))}

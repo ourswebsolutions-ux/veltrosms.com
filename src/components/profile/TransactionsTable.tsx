@@ -2,9 +2,13 @@ import Link from "next/link";
 import { Money } from "@/components/currency/DisplayCurrency";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatShortDateTime } from "@/lib/format";
 import type { TransactionListItem, TransactionType } from "@/types/account";
+import { getT } from "@/i18n/server";
+import type { Translator } from "@/i18n/translate";
+import { TRANSACTION_STATUS, TRANSACTION_TYPE } from "@/i18n/labels";
+import { DateTime } from "@/components/ui/DateTime";
 
+/** English labels, used by the admin panel (customers see translated labels). */
 export const TRANSACTION_LABEL: Record<TransactionType, string> = {
   deposit: "Top-up",
   purchase: "Number purchase",
@@ -12,21 +16,19 @@ export const TRANSACTION_LABEL: Record<TransactionType, string> = {
   adjustment: "Adjustment",
 };
 
-const STATUS_LABEL = { completed: "Completed", pending: "Pending", failed: "Failed" } as const;
-
 /** Where a ledger entry came from, linked to the caller's own order/payment. */
-function Source({ t }: { t: TransactionListItem }) {
-  if (t.orderId) {
+function Source({ tx, t }: { tx: TransactionListItem; t: Translator }) {
+  if (tx.orderId) {
     return (
-      <Link href={`/profile/orders/${t.orderId}`} className="font-mono text-xs text-primary hover:underline">
-        Order #{t.orderId.slice(0, 8)}
+      <Link href={`/profile/orders/${tx.orderId}`} className="font-mono text-xs text-primary hover:underline">
+        <bdi>{t("tx.order", { id: tx.orderId.slice(0, 8) })}</bdi>
       </Link>
     );
   }
-  if (t.paymentId) {
+  if (tx.paymentId) {
     return (
-      <Link href={`/profile/top-up/${t.paymentId}`} className="text-xs text-primary hover:underline">
-        Payment details
+      <Link href={`/profile/top-up/${tx.paymentId}`} className="text-xs text-primary hover:underline">
+        {t("tx.paymentDetails")}
       </Link>
     );
   }
@@ -35,41 +37,50 @@ function Source({ t }: { t: TransactionListItem }) {
 
 function Amount({ value, currency }: { value: number; currency: string }) {
   return (
-    <Money amount={value} currency={currency} signed variant="stack" className={cn("font-medium tabular-nums", value >= 0 ? "text-success" : "text-fg")} />
+    <Money
+      amount={value}
+      currency={currency}
+      signed
+      variant="stack"
+      className={cn("font-medium tabular-nums", value >= 0 ? "text-success" : "text-fg")}
+    />
   );
 }
 
 /** Balance ledger as a table on ≥ md and as stacked rows on phones. */
-export function TransactionsTable({ transactions }: { transactions: TransactionListItem[] }) {
+export async function TransactionsTable({ transactions }: { transactions: TransactionListItem[] }) {
+  const t = await getT();
   return (
     <>
       <Table className="hidden md:table">
         <THead>
           <tr>
-            <Th>Date</Th>
-            <Th>Type</Th>
-            <Th>Details</Th>
-            <Th className="text-right">Amount</Th>
-            <Th className="text-right">Balance</Th>
+            <Th>{t("common.date")}</Th>
+            <Th>{t("common.type")}</Th>
+            <Th>{t("common.details")}</Th>
+            <Th className="text-end">{t("common.amount")}</Th>
+            <Th className="text-end">{t("common.balance")}</Th>
           </tr>
         </THead>
         <TBody>
-          {transactions.map((t) => (
-            <Tr key={t.id} className="hover:bg-surface-muted/60">
-              <Td className="text-sm whitespace-nowrap text-fg-muted">{formatShortDateTime(t.createdAt)}</Td>
-              <Td className="font-medium whitespace-nowrap">{TRANSACTION_LABEL[t.type]}</Td>
+          {transactions.map((row) => (
+            <Tr key={row.id} className="hover:bg-surface-muted/60">
+              <Td className="text-sm whitespace-nowrap text-fg-muted">
+                <DateTime iso={row.createdAt} short />
+              </Td>
+              <Td className="font-medium whitespace-nowrap">{t(TRANSACTION_TYPE[row.type])}</Td>
               <Td className="text-fg-muted">
-                {t.description ?? "—"}
+                <bdi>{row.description ? t.server(row.description) : "—"}</bdi>
                 <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs">
-                  <Source t={t} />
-                  {t.status !== "completed" && <span className="text-warning">{STATUS_LABEL[t.status]}</span>}
+                  <Source tx={row} t={t} />
+                  {row.status !== "completed" && <span className="text-warning">{t(TRANSACTION_STATUS[row.status])}</span>}
                 </span>
               </Td>
-              <Td className="text-right">
-                <Amount value={t.amount} currency={t.currency} />
+              <Td className="text-end">
+                <Amount value={row.amount} currency={row.currency} />
               </Td>
-              <Td className="pr-0 text-right tabular-nums text-fg-muted">
-                <Money amount={t.balanceAfter} currency={t.currency} variant="stack" className="items-end" />
+              <Td className="pe-0 text-end tabular-nums text-fg-muted">
+                <Money amount={row.balanceAfter} currency={row.currency} variant="stack" className="items-end" />
               </Td>
             </Tr>
           ))}
@@ -77,21 +88,25 @@ export function TransactionsTable({ transactions }: { transactions: TransactionL
       </Table>
 
       <ul className="divide-y divide-line md:hidden">
-        {transactions.map((t) => (
-          <li key={t.id} className="flex items-start justify-between gap-3 py-3">
+        {transactions.map((row) => (
+          <li key={row.id} className="flex items-start justify-between gap-3 py-3">
             <div className="min-w-0">
-              <p className="font-medium">{TRANSACTION_LABEL[t.type]}</p>
-              <p className="truncate text-[13px] text-fg-muted">{t.description ?? "—"}</p>
-              <p className="flex flex-wrap gap-x-2">
-                <Source t={t} />
-                {t.status !== "completed" && <span className="text-xs text-warning">{STATUS_LABEL[t.status]}</span>}
+              <p className="font-medium">{t(TRANSACTION_TYPE[row.type])}</p>
+              <p className="truncate text-[13px] text-fg-muted">
+                <bdi>{row.description ? t.server(row.description) : "—"}</bdi>
               </p>
-              <p className="text-xs text-fg-subtle">{formatDateTime(t.createdAt)}</p>
+              <p className="flex flex-wrap gap-x-2">
+                <Source tx={row} t={t} />
+                {row.status !== "completed" && <span className="text-xs text-warning">{t(TRANSACTION_STATUS[row.status])}</span>}
+              </p>
+              <p className="text-xs text-fg-subtle">
+                <DateTime iso={row.createdAt} />
+              </p>
             </div>
-            <div className="shrink-0 text-right">
-              <Amount value={t.amount} currency={t.currency} />
+            <div className="shrink-0 text-end">
+              <Amount value={row.amount} currency={row.currency} />
               <p className="text-xs text-fg-subtle tabular-nums">
-                <Money amount={t.balanceAfter} currency={t.currency} variant="stack" className="items-end" />
+                <Money amount={row.balanceAfter} currency={row.currency} variant="stack" className="items-end" />
               </p>
             </div>
           </li>

@@ -4,6 +4,7 @@ import { randomInt } from "node:crypto";
 import { toDecimalString, toMinor } from "@/lib/money";
 import { hitRateLimit, RATE_LIMITS } from "@/server/auth/rate-limit";
 import { serviceColor } from "@/server/catalog/service-hints";
+import { siteConfig } from "@/config/site";
 import { db, isUniqueViolation } from "@/server/db";
 import type { ReadyMadeCompleteResult, ReadyMadeOfferView, ReadyMadeOrderView, ReadyMadePurchaseResult } from "@/types/ready-made";
 import { getSetting, whatsappDigits } from "./settings.service";
@@ -27,8 +28,8 @@ import { applyInTx, WalletError } from "./wallet.service";
  * Any failure rolls all of it back. The amount always comes from the offer.
  */
 
-/** Used when the admin hasn't set a WhatsApp number (same default as manual top-ups). */
-const DEFAULT_WHATSAPP = "03246623395";
+/** Used when the admin hasn't set a WhatsApp number (the site-wide support WhatsApp). */
+const DEFAULT_WHATSAPP = siteConfig.supportWhatsApp;
 const REFERENCE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // no 0/O, 1/I/L
 
 function newReference(): string {

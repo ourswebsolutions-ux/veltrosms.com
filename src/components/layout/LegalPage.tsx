@@ -3,26 +3,23 @@ import { Alert } from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { getT } from "@/i18n/server";
 
 /** Shared shell for legal documents. Content is placeholder until legal review. */
-export function LegalPage({
+export async function LegalPage({
   title,
   sections,
 }: {
   title: string;
   sections: { heading: string; body: ReactNode }[];
 }) {
+  const t = await getT();
   return (
     <PageContainer size="narrow">
       <Card className="sm:!p-10">
-        <PageHeader
-          title={title}
-          size="lg"
-          breadcrumbs={[{ label: "Home", href: "/" }, { label: title }]}
-        />
-        <Alert tone="warning" title="Placeholder document" className="mb-8">
-          The final text will be published after legal review. The outline below shows the
-          topics it will cover.
+        <PageHeader title={title} size="lg" breadcrumbs={[{ label: t("common.home"), href: "/" }, { label: title }]} />
+        <Alert tone="warning" title={t("legal.placeholderTitle")} className="mb-8">
+          {t("legal.placeholderBody")}
         </Alert>
         <div className="space-y-6">
           {sections.map((s, i) => (

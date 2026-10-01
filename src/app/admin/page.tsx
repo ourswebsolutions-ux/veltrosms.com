@@ -165,7 +165,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
               <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-2">
                 <span className={a.success ? "font-medium" : "font-medium text-danger"}>{a.description ?? a.action}</span>
                 <span className="text-fg-muted">{a.actorEmail ?? "system"}</span>
-                <span className="ml-auto text-xs text-fg-subtle">{formatShortDateTime(a.createdAt)}</span>
+                <span className="ms-auto text-xs text-fg-subtle">{formatShortDateTime(a.createdAt)}</span>
               </li>
             ))}
           </ul>

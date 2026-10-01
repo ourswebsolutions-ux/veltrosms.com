@@ -54,7 +54,7 @@ export default async function AdminReadyMadePage() {
                   <ServiceAvatar name={o.service.name} color={serviceColor(o.service.providerCode, o.service.name)} logo={serviceLogo(o.service.providerCode)} size={22} />
                   {o.service.name}
                   {!(o.service.isActive && o.service.providerActive) && (
-                    <Badge tone="neutral" className="ml-1.5">
+                    <Badge tone="neutral" className="ms-1.5">
                       Service off
                     </Badge>
                   )}
@@ -73,8 +73,8 @@ export default async function AdminReadyMadePage() {
                   <span className="text-fg-muted">All countries</span>
                 ),
             },
-            { header: "Price", className: "text-right tabular-nums font-medium", cell: (o) => formatPrice(o.price, o.currency) },
-            { header: "Currency", className: "pl-6", desktopOnly: true, cell: (o) => o.currency },
+            { header: "Price", className: "text-end tabular-nums font-medium", cell: (o) => formatPrice(o.price, o.currency) },
+            { header: "Currency", className: "ps-6", desktopOnly: true, cell: (o) => o.currency },
             { header: "Status", cell: (o) => (o.isActive ? <Badge tone="success">Active</Badge> : <Badge tone="neutral">Disabled</Badge>) },
             { header: "Updated", className: "whitespace-nowrap text-fg-muted", desktopOnly: true, cell: (o) => formatShortDateTime(o.updatedAt) },
             {

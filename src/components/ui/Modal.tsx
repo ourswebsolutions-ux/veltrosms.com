@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/client";
 
 /**
  * Accessible modal built on the native <dialog> element (focus trap, Esc and
@@ -24,6 +25,7 @@ export function Modal({
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const t = useT();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -51,7 +53,7 @@ export function Modal({
           type="button"
           onClick={onClose}
           className="rounded-md p-1 text-fg-muted hover:bg-surface-muted hover:text-fg"
-          aria-label="Close"
+          aria-label={t("common.close")}
         >
           <Icon name="close" />
         </button>

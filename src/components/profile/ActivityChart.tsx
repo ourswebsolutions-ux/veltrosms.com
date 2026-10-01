@@ -1,4 +1,6 @@
 import type { OrderStats } from "@/types/account";
+import { getLocale, getT } from "@/i18n/server";
+import { intlLocale } from "@/i18n/config";
 
 const W = 700;
 const H = 200;
@@ -9,7 +11,8 @@ const PAD = { top: 12, right: 8, bottom: 26, left: 28 };
  * charting dependency for one small chart. Includes a data table for screen
  * readers.
  */
-export function ActivityChart({ days }: { days: OrderStats["byDay"] }) {
+export async function ActivityChart({ days }: { days: OrderStats["byDay"] }) {
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
   const max = Math.max(1, ...days.map((d) => d.total));
   const niceMax = Math.max(4, Math.ceil(max / 4) * 4);
   const innerW = W - PAD.left - PAD.right;
@@ -19,17 +22,17 @@ export function ActivityChart({ days }: { days: OrderStats["byDay"] }) {
   const y = (v: number) => PAD.top + innerH - (v / niceMax) * innerH;
   const ticks = [0, niceMax / 2, niceMax];
   const label = (iso: string) =>
-    new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    new Date(`${iso}T00:00:00Z`).toLocaleDateString(intlLocale(locale), { month: "short", day: "numeric", timeZone: "UTC" });
 
   return (
-    <figure>
+    <figure dir="ltr">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-labelledby="activity-title">
-        <title id="activity-title">{`Activations per day over the last ${days.length} days`}</title>
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" />
-            <text x={PAD.left - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--color-fg-subtle)">
-              {t}
+        <title id="activity-title">{t("stats.perDay", { days: days.length })}</title>
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line x1={PAD.left} x2={W - PAD.right} y1={y(tick)} y2={y(tick)} stroke="var(--color-line)" />
+            <text x={PAD.left - 6} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--color-fg-subtle)">
+              {tick}
             </text>
           </g>
         ))}
@@ -56,19 +59,19 @@ export function ActivityChart({ days }: { days: OrderStats["byDay"] }) {
       </svg>
       <figcaption className="mt-2 flex gap-4 text-[13px] text-fg-muted">
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-primary" /> Successful
+          <span className="size-2.5 rounded-sm bg-primary" /> {t("stats.successful")}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-primary-tint-border" /> Cancelled or expired
+          <span className="size-2.5 rounded-sm bg-primary-tint-border" /> {t("stats.cancelled")}
         </span>
       </figcaption>
       <table className="sr-only">
-        <caption>Activations per day</caption>
+        <caption>{t("stats.dayTitle")}</caption>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Total</th>
-            <th>Successful</th>
+            <th>{t("common.date")}</th>
+            <th>{t("common.total")}</th>
+            <th>{t("stats.successful")}</th>
           </tr>
         </thead>
         <tbody>

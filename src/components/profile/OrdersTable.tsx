@@ -3,32 +3,35 @@ import { Money } from "@/components/currency/DisplayCurrency";
 import { OrderStatus } from "@/components/orders/OrderStatus";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { formatDateTime, formatPhone, formatShortDateTime } from "@/lib/format";
+import { formatPhone } from "@/lib/format";
 import type { OrderListItem } from "@/types/account";
+import { getT } from "@/i18n/server";
+import { DateTime } from "@/components/ui/DateTime";
 
 /** Orders as a table on ≥ md and as stacked cards on phones. */
-export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
+export async function OrdersTable({ orders }: { orders: OrderListItem[] }) {
+  const t = await getT();
   return (
     <>
       <Table className="hidden md:table">
         <THead>
           <tr>
-            <Th>Order</Th>
-            <Th>Service</Th>
-            <Th className="hidden 2xl:table-cell">Country</Th>
-            <Th>Number</Th>
-            <Th>Code</Th>
-            <Th>Status</Th>
-            <Th className="text-right">Amount</Th>
+            <Th>{t("order.order")}</Th>
+            <Th>{t("common.service")}</Th>
+            <Th className="hidden 2xl:table-cell">{t("common.country")}</Th>
+            <Th>{t("common.number")}</Th>
+            <Th>{t("common.code")}</Th>
+            <Th>{t("common.status")}</Th>
+            <Th className="text-end">{t("common.amount")}</Th>
           </tr>
         </THead>
         <TBody>
           {orders.map((o) => (
             <Tr key={o.id} className="hover:bg-surface-muted/60">
               <Td className="text-sm whitespace-nowrap text-fg-muted">
-                {formatShortDateTime(o.createdAt)}
-                <Link href={`/profile/orders/${o.id}`} className="block font-mono text-xs text-primary hover:underline" title={`Order ${o.id}`}>
-                  #{o.id.slice(0, 8)}
+                <DateTime iso={o.createdAt} short />
+                <Link href={`/profile/orders/${o.id}`} className="block font-mono text-xs text-primary hover:underline" title={o.id}>
+                  <bdi>#{o.id.slice(0, 8)}</bdi>
                 </Link>
               </Td>
               <Td>
@@ -55,7 +58,7 @@ export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
               <Td>
                 <OrderStatus status={o.status} />
               </Td>
-              <Td className="pr-0 text-right tabular-nums">
+              <Td className="pe-0 text-end tabular-nums">
                 <Money amount={o.price} currency={o.currency} variant="stack" className="items-end" />
               </Td>
             </Tr>
@@ -84,9 +87,13 @@ export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
             </div>
             <div className="mt-2 flex items-center justify-between text-[13px] text-fg-muted">
               <span>
-                {formatDateTime(o.createdAt)} · <span className="font-mono">#{o.id.slice(0, 8)}</span>
+                <DateTime iso={o.createdAt} /> · <bdi className="font-mono">#{o.id.slice(0, 8)}</bdi>
               </span>
-              {o.code && <span className="font-mono text-sm font-semibold text-success">Code {o.code}</span>}
+              {o.code && (
+                <span className="text-sm font-semibold text-success">
+                  {t("common.code")} <bdi className="font-mono">{o.code}</bdi>
+                </span>
+              )}
             </div>
           </li>
         ))}

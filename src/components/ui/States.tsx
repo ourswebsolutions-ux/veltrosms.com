@@ -1,7 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { Spinner } from "./Spinner";
+import { useT } from "@/i18n/client";
 
 function StateShell({
   icon,
@@ -67,7 +70,7 @@ export function EmptyState({
 }
 
 export function ErrorState({
-  title = "Something went wrong",
+  title,
   ...props
 }: {
   title?: ReactNode;
@@ -76,18 +79,19 @@ export function ErrorState({
   compact?: boolean;
   className?: string;
 }) {
+  const t = useT();
   return (
     <StateShell
       icon={<Icon name="alert" size={props.compact ? 22 : 26} />}
       iconClassName="bg-danger-tint text-danger"
-      title={title}
+      title={title ?? t("common.somethingWrong")}
       {...props}
     />
   );
 }
 
 export function LoadingState({
-  label = "Loading…",
+  label,
   compact,
   className,
 }: {
@@ -95,6 +99,7 @@ export function LoadingState({
   compact?: boolean;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div
       className={cn(
@@ -104,7 +109,7 @@ export function LoadingState({
       )}
     >
       <Spinner size={compact ? 24 : 32} className="text-primary" />
-      <span className="text-sm">{label}</span>
+      <span className="text-sm">{label ?? t("common.loading")}</span>
     </div>
   );
 }

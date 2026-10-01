@@ -4,7 +4,6 @@ import { createContext, useCallback, useContext, useMemo, type ReactNode } from 
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_DISPLAY_CURRENCY,
-  displayCurrencyInfo,
   formatConverted,
   formatOriginal,
   isDisplayCurrency,
@@ -12,7 +11,9 @@ import {
   type DisplayRate,
   type DisplayRates,
 } from "@/lib/display-currency";
+import { stripBidi } from "@/lib/format";
 import { usePref } from "@/lib/preferences";
+import { useT } from "@/i18n/client";
 
 /** Per-browser display currency (USD unless the visitor picks another). */
 export const CURRENCY_KEY = "ui-currency";
@@ -77,11 +78,12 @@ export function Money({
   approxClassName?: string;
 }) {
   const { convert } = useDisplayCurrency();
+  const t = useT();
   const original = formatOriginal(amount, currency, { signed });
   const converted = convert(amount, currency, { signed });
   if (!converted) return <span className={className}>{original}</span>;
   const approx = `≈ ${converted}`;
-  const title = `${original} (${currency}) is the actual amount; ${converted} is approximate`;
+  const title = stripBidi(t("money.approxTitle", { original, currency, converted }));
   if (variant === "auto") {
     return (
       <span className={className} title={title}>
@@ -100,16 +102,11 @@ export function Money({
   return (
     <span className={className} title={title}>
       {original}
-      <span className={cn("ml-1.5 text-[0.85em] font-normal text-fg-muted", approxClassName)}>{approx}</span>
+      <span className={cn("ms-1.5 text-[0.85em] font-normal text-fg-muted", approxClassName)}>{approx}</span>
     </span>
   );
 }
 
-/** Label for the approximate row in purchase dialogs, e.g. "Approx. INR". */
-export function useApproxLabel(): string | null {
-  const { rate } = useDisplayCurrency();
-  return rate ? `Approx. ${displayCurrencyInfo(rate.currency).code}` : null;
-}
 
 /**
  * Price rows for purchase dialogs (inside a <dl>). With a non-base display
@@ -118,26 +115,27 @@ export function useApproxLabel(): string | null {
  */
 export function ChargeRows({ amount, currency, priceClassName = "font-semibold text-primary tabular-nums" }: { amount: number; currency: string; priceClassName?: string }) {
   const { convert, rate } = useDisplayCurrency();
+  const t = useT();
   const original = formatOriginal(amount, currency);
   const converted = convert(amount, currency);
   if (!converted || !rate) {
     return (
       <>
-        <dt className="text-fg-muted">Price</dt>
+        <dt className="text-fg-muted">{t("money.price")}</dt>
         <dd className={priceClassName}>{original}</dd>
       </>
     );
   }
   return (
     <>
-      <dt className="text-fg-muted">Original price</dt>
+      <dt className="text-fg-muted">{t("money.originalPrice")}</dt>
       <dd className={priceClassName}>{original}</dd>
-      <dt className="text-fg-muted">Approx. {rate.currency}</dt>
+      <dt className="text-fg-muted">{t("money.approx", { code: rate.currency })}</dt>
       <dd className="tabular-nums">
         {converted}
-        <span className="block text-xs text-fg-muted">For reference only — exchange rates change.</span>
+        <span className="block text-xs text-fg-muted">{t("money.approxNote")}</span>
       </dd>
-      <dt className="text-fg-muted">You will be charged</dt>
+      <dt className="text-fg-muted">{t("money.willBeCharged")}</dt>
       <dd className="font-semibold tabular-nums">
         {original} <span className="font-normal text-fg-muted">({currency})</span>
       </dd>

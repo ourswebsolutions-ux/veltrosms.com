@@ -5,8 +5,11 @@ import { Card } from "@/components/ui/Card";
 import { requireUser } from "@/server/auth/session";
 import { getAccountProfile } from "@/server/services/account.service";
 import { getTopUp, getTopUpOptions } from "@/server/services/payment.service";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Payment" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("pay.payment") };
+}
 
 /**
  * Where the payment provider sends the customer back. Arriving here proves

@@ -15,6 +15,7 @@ import { whatsappHref } from "@/lib/whatsapp";
 import { createManualTopUpAction } from "@/server/actions/payments";
 import type { TopUpResult } from "@/server/services/payment.service";
 import type { ManualPaymentDetails, TopUpOptions } from "@/types/account";
+import { useT } from "@/i18n/client";
 
 const METHODS = [
   { id: "easypaisa", label: "Easypaisa" },
@@ -30,16 +31,17 @@ function newKey(): string {
 
 /** The receiving account, with copy buttons. */
 export function PaymentAccount({ details }: { details: ManualPaymentDetails }) {
+  const t = useT();
   return (
     <div className="rounded-xl border border-accent/40 bg-accent-tint p-4">
       <p className="text-xs font-semibold tracking-wide text-accent uppercase">Easypaisa / JazzCash</p>
       <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2">
-        <dt className="text-sm text-fg-muted">Account name</dt>
+        <dt className="text-sm text-fg-muted">{t("topup.accountName")}</dt>
         <dd className="text-lg font-semibold">{details.accountName}</dd>
-        <dt className="text-sm text-fg-muted">Number</dt>
+        <dt className="text-sm text-fg-muted">{t("common.number")}</dt>
         <dd className="flex items-center gap-1.5 font-mono text-lg font-semibold tabular-nums">
-          {details.accountNumber}
-          <CopyButton value={details.accountNumber.replace(/\s/g, "")} label="Copy account number" className="size-8" />
+          <bdi>{details.accountNumber}</bdi>
+          <CopyButton value={details.accountNumber.replace(/\s/g, "")} label={t("topup.copyAccount")} className="size-8" />
         </dd>
       </dl>
     </div>
@@ -49,6 +51,7 @@ export function PaymentAccount({ details }: { details: ManualPaymentDetails }) {
 /** How manual top-ups work, with the WhatsApp help action. Opens on the first visit per session. */
 export function ManualPaymentHelp({ details, email, autoOpen = true }: { details: ManualPaymentDetails; email: string; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const tr = useT();
   useEffect(() => {
     if (!autoOpen) return;
     try {
@@ -57,44 +60,52 @@ export function ManualPaymentHelp({ details, email, autoOpen = true }: { details
     } catch {
       /* storage unavailable: still show it */
     }
-    const t = window.setTimeout(() => setOpen(true), 0);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setOpen(true), 0);
+    return () => window.clearTimeout(timer);
   }, [autoOpen]);
-  const wa = whatsappHref(details, { email });
+  const wa = whatsappHref(details, { email }, tr);
 
   return (
     <>
       <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Icon name="alert" size={16} /> How to add funds
+        <Icon name="alert" size={16} /> {tr("topup.howTo")}
       </Button>
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="How to add balance"
+        title={tr("topup.howToTitle")}
         footer={
           <>
             {wa && (
               <ButtonLink href={wa} target="_blank" rel="noopener noreferrer" className="!bg-[#25d366] hover:!bg-[#1ebe5a]">
-                <Icon name="message" size={18} /> Contact on WhatsApp
+                <Icon name="message" size={18} /> {tr("wa.contact")}
               </ButtonLink>
             )}
             <Button variant="muted" onClick={() => setOpen(false)}>
-              Got it
+              {tr("topup.gotIt")}
             </Button>
           </>
         }
       >
         <div className="space-y-4 text-[15px]">
           <PaymentAccount details={details} />
-          <ol className="list-decimal space-y-1.5 pl-5">
-            <li>Send the amount you want to add to the Easypaisa / JazzCash number above.</li>
-            <li>Keep the transaction ID (TID) from your payment receipt.</li>
-            <li>Submit the top-up request on this page with the amount and the transaction ID.</li>
-            <li>Contact us on WhatsApp{details.whatsapp ? ` (${details.whatsapp})` : ""} if you need help.</li>
-            <li>Wait while an administrator verifies your payment.</li>
-            <li>Your balance is added after approval.</li>
+          <ol className="list-decimal space-y-1.5 ps-5">
+            <li>{tr("topup.how1")}</li>
+            <li>{tr("topup.how2")}</li>
+            <li>{tr("topup.how3")}</li>
+            <li>
+              {tr("topup.how4")}
+              {details.whatsapp ? (
+                <>
+                  {" "}
+                  (<bdi>{details.whatsapp}</bdi>)
+                </>
+              ) : null}
+            </li>
+            <li>{tr("topup.how5")}</li>
+            <li>{tr("topup.how6")}</li>
           </ol>
-          <Alert tone="info">Payments are verified manually, so crediting isn&apos;t instant.</Alert>
+          <Alert tone="info">{tr("topup.notInstant")}</Alert>
           {details.note && <p className="text-sm text-fg-muted">{details.note}</p>}
         </div>
       </Modal>
@@ -116,15 +127,16 @@ export function ManualTopUpForm({ options, balance }: { options: TopUpOptions; b
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [key, setKey] = useState(newKey);
+  const t = useT();
 
   const amount = amountInput.trim() ? parseAmount(amountInput.trim().replace(",", ".")) : null;
   const amountError =
     !amountInput.trim()
       ? null
       : amount === null || amount % (MONEY_SCALE / 100) !== 0
-        ? "Enter an amount like 10 or 12.50."
+        ? t("srv.pay.amountFormat")
         : amount < options.min || amount > options.max
-          ? `Enter an amount between ${formatPrice(options.min, options.currency)} and ${formatPrice(options.max, options.currency)}.`
+          ? t("topup.amountBetween", { min: formatPrice(options.min, options.currency), max: formatPrice(options.max, options.currency) })
           : null;
   const tidOk = /^[A-Za-z0-9-]{6,40}$/.test(transactionId.trim().replace(/\s+/g, ""));
   const ready = amount !== null && !amountError && tidOk;
@@ -139,11 +151,11 @@ export function ManualTopUpForm({ options, balance }: { options: TopUpOptions; b
         r = await createManualTopUpAction({ amount: amountInput.trim(), method, transactionId, note: note.trim() || undefined, idempotencyKey: key });
       } catch {
         // Unknown outcome: keep the key so resubmitting can't create a duplicate request.
-        setError("We couldn't reach the server. Check your connection and submit again.");
+        setError(t("topup.unreachable"));
         return;
       }
       if (!r.ok) {
-        setError(r.message);
+        setError(t.server(r.message));
         setKey(newKey());
         return;
       }
@@ -152,15 +164,20 @@ export function ManualTopUpForm({ options, balance }: { options: TopUpOptions; b
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5" aria-label="Manual top-up request">
-      <Field label={`Amount (${options.currency})`} required error={amountError ?? undefined} hint={`From ${formatPrice(options.min, options.currency)} to ${formatPrice(options.max, options.currency)} — the amount you sent.`}>
+    <form onSubmit={submit} className="space-y-5" aria-label={t("topup.formLabel")}>
+      <Field
+        label={t("topup.amount", { currency: options.currency })}
+        required
+        error={amountError ?? undefined}
+        hint={t("topup.amountHint", { min: formatPrice(options.min, options.currency), max: formatPrice(options.max, options.currency) })}
+      >
         {(p) => (
-          <Input {...p} value={amountInput} onChange={(e) => setAmountInput(e.target.value)} inputMode="decimal" autoComplete="off" name="amount" placeholder="e.g. 10" className="text-lg font-semibold tabular-nums" />
+          <Input {...p} value={amountInput} onChange={(e) => setAmountInput(e.target.value)} inputMode="decimal" autoComplete="off" name="amount" placeholder={t("topup.amountPlaceholder")} className="text-lg font-semibold tabular-nums" />
         )}
       </Field>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium">Paid with</legend>
+        <legend className="mb-2 text-sm font-medium">{t("topup.paidWith")}</legend>
         <div className="grid grid-cols-2 gap-2">
           {METHODS.map((m) => (
             <label
@@ -181,29 +198,29 @@ export function ManualTopUpForm({ options, balance }: { options: TopUpOptions; b
       </fieldset>
 
       <Field
-        label="Transaction ID (TID)"
+        label={t("topup.tid")}
         required
-        error={transactionId && !tidOk ? "Use the transaction ID from your receipt (6–40 letters or digits)." : undefined}
-        hint="Shown on your Easypaisa / JazzCash receipt or SMS."
+        error={transactionId && !tidOk ? t("topup.tidError") : undefined}
+        hint={t("topup.tidHint")}
       >
-        {(p) => <Input {...p} value={transactionId} onChange={(e) => setTransactionId(e.target.value)} name="transactionId" autoComplete="off" maxLength={60} placeholder="e.g. 12345678901" className="font-mono" />}
+        {(p) => <Input {...p} value={transactionId} onChange={(e) => setTransactionId(e.target.value)} name="transactionId" autoComplete="off" maxLength={60} placeholder={t("topup.tidPlaceholder")} className="font-mono" dir="ltr" />}
       </Field>
 
-      <Field label="Note (optional)" hint="Anything that helps us find your payment, e.g. the sender's number.">
+      <Field label={t("topup.note")} hint={t("topup.noteHint")}>
         {(p) => <Textarea {...p} value={note} onChange={(e) => setNote(e.target.value)} name="note" rows={2} maxLength={300} />}
       </Field>
 
       {amount !== null && !amountError && (
         <p className="rounded-lg bg-surface-muted px-4 py-3 text-sm">
-          After approval your balance will be <b className="tabular-nums">{formatPrice(balance + amount, options.currency)}</b>.
+          {t("topup.afterApproval")} <b className="tabular-nums">{formatPrice(balance + amount, options.currency)}</b>
         </p>
       )}
       {error && <Alert tone="error">{error}</Alert>}
 
       <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center">
-        <p className="flex-1 text-[13px] text-fg-muted">Manual verification required: your balance is updated after an administrator confirms the payment.</p>
+        <p className="flex-1 text-[13px] text-fg-muted">{t("topup.manualNote")}</p>
         <Button type="submit" size="lg" loading={pending} disabled={pending || !ready}>
-          Submit top-up request
+          {t("topup.submit")}
         </Button>
       </div>
     </form>

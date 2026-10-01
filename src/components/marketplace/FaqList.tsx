@@ -4,10 +4,12 @@ import { useState } from "react";
 import { AccordionItem } from "@/components/ui/Accordion";
 import { SearchInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/States";
-import type { FaqEntry } from "@/content/faq";
+import type { FaqText } from "@/content/faq";
+import { useT } from "@/i18n/client";
 
-export function FaqList({ entries }: { entries: FaqEntry[] }) {
+export function FaqList({ entries }: { entries: FaqText[] }) {
   const [query, setQuery] = useState("");
+  const t = useT();
   const q = query.trim().toLowerCase();
   const visible = q
     ? entries.filter(
@@ -23,12 +25,12 @@ export function FaqList({ entries }: { entries: FaqEntry[] }) {
         size="sm"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search questions"
-        aria-label="Search questions"
+        placeholder={t("faq.search")}
+        aria-label={t("faq.search")}
         className="mb-5 max-w-[260px]"
       />
       {visible.length === 0 ? (
-        <EmptyState compact icon="search" title="No matching questions" description="Try other keywords or ask us below." />
+        <EmptyState compact icon="search" title={t("faq.noMatch")} description={t("faq.noMatchHint")} />
       ) : (
         <div className="space-y-2.5">
           {visible.map((entry) => (

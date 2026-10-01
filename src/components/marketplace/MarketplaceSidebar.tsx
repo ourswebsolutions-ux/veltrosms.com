@@ -17,6 +17,7 @@ import { PurchaseDialog, type PurchaseIntent, type Viewer } from "./PurchaseDial
 import { useFavorites } from "./useFavorites";
 import { ServiceSelector } from "./ServiceSelector";
 import { useOffers } from "./useOffers";
+import { useT } from "@/i18n/client";
 
 type SortKey = "top" | "qty" | "price";
 
@@ -45,18 +46,19 @@ export function MarketplaceSidebar({
   const [activePath, setActivePath] = useState<string | null>(activeOrders.length ? pathname : null);
   if (activeOrders.length > 0 && activePath !== pathname) setActivePath(pathname);
   const showActive = pathname !== "/profile" && (activeOrders.length > 0 || activePath === pathname);
+  const t = useT();
   const [serviceSlug, setServiceSlug] = useState(initialService);
   const service = services.find((s) => s.slug === serviceSlug) ?? services[0];
 
   if (!service) {
     return (
-      <aside aria-label="Buy a number" className={cn("flex-col gap-4", pathname === "/" ? "flex" : "hidden lg:flex")}>
+      <aside aria-label={t("market.buyNumber")} className={cn("flex-col gap-4", pathname === "/" ? "flex" : "hidden lg:flex")}>
         <Card>
-          <CardHeader title="Service selection" />
+          <CardHeader title={t("market.serviceSelection")} />
           {initialOffers.status === "unavailable" ? (
-            <EmptyState compact icon="phone" title="Numbers coming soon" description={initialOffers.message} />
+            <EmptyState compact icon="phone" title={t("home.comingSoon")} description={t.server(initialOffers.message)} />
           ) : (
-            <EmptyState compact icon="phone" title="Loading catalog" description="Services appear here once prices are synced. Refresh in a moment." />
+            <EmptyState compact icon="phone" title={t("market.loadingCatalog")} description={t("market.loadingCatalogHint")} />
           )}
         </Card>
       </aside>
@@ -65,7 +67,7 @@ export function MarketplaceSidebar({
 
   return (
     <aside
-      aria-label="Buy a number"
+      aria-label={t("market.buyNumber")}
       className={cn(
         "flex-col gap-4 lg:sticky lg:top-[130px] lg:max-h-[calc(100dvh-146px)] lg:min-h-[640px]",
         pathname === "/" ? "flex" : "hidden lg:flex",
@@ -73,7 +75,7 @@ export function MarketplaceSidebar({
     >
       {showActive && <ActiveNumbers key={pathname} orders={activeOrders} />}
       <Card className="shrink-0 !pb-5">
-        <CardHeader title="Service selection" action={{ label: "All services", href: "/price" }} />
+        <CardHeader title={t("market.serviceSelection")} action={{ label: t("market.allServices"), href: "/price" }} />
         <ServiceSelector services={services} value={service.slug} onChange={setServiceSlug} />
       </Card>
       <CountryPicker
@@ -86,15 +88,17 @@ export function MarketplaceSidebar({
 }
 
 function ActiveNumbers({ orders }: { orders: OrderListItem[] }) {
+  const t = useT();
   return (
-    <Card className="shrink-0 !pb-4" aria-label="Your active numbers">
+    <Card className="shrink-0 !pb-4" aria-label={t("market.yourActive")}>
       <CardHeader
         title={
           <>
-            Active numbers{orders.length > 0 && <span className="text-fg-muted"> ({orders.length})</span>}
+            {t("market.activeNumbers")}
+            {orders.length > 0 && <span className="text-fg-muted"> ({orders.length})</span>}
           </>
         }
-        action={{ label: "All orders", href: "/profile/history?tab=orders" }}
+        action={{ label: t("market.allOrders"), href: "/profile/history?tab=orders" }}
       />
       <ActiveOrdersList orders={orders} className="-mx-1 max-h-[340px] gap-2 overflow-y-auto px-1 scroll-thin" />
     </Card>
@@ -115,6 +119,7 @@ function CountryPicker({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "top", dir: "desc" });
   const [intent, setIntent] = useState<PurchaseIntent | null>(null);
+  const t = useT();
 
   const groups = useMemo(() => {
     if (state.status !== "ok") return [];
@@ -147,28 +152,28 @@ function CountryPicker({
       <CardHeader
         title={
           <>
-            Country selection for <span className="text-primary">{service.name}</span>
+            {t("market.countryFor")} <span className="text-primary">{service.name}</span>
           </>
         }
-        action={{ label: "All countries", href: `/price?service=${service.slug}` }}
+        action={{ label: t("market.allCountries"), href: `/price?service=${service.slug}` }}
       />
       <SearchInput
         size="sm"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by country"
-        aria-label="Search by country"
+        placeholder={t("market.searchCountry")}
+        aria-label={t("market.searchCountry")}
       />
       <div className="mt-2.5 mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
         <SortButton active={sort.key === "top"} dir="desc" onClick={() => setSort({ key: "top", dir: "desc" })}>
-          Top countries
+          {t("market.topCountries")}
         </SortButton>
-        <span className="ml-auto" />
+        <span className="ms-auto" />
         <SortButton active={sort.key === "qty"} dir={sort.dir} onClick={() => toggleSort("qty")}>
-          Quantity
+          {t("common.quantity")}
         </SortButton>
         <SortButton active={sort.key === "price"} dir={sort.dir} onClick={() => toggleSort("price")}>
-          Price
+          {t("common.price")}
         </SortButton>
       </div>
 
@@ -182,22 +187,22 @@ function CountryPicker({
         ) : state.status === "error" ? (
           <ErrorState
             compact
-            description={state.message}
+            description={t.server(state.message)}
             action={
               <Button size="sm" variant="outline" onClick={reload}>
-                <Icon name="refresh" size={16} /> Try again
+                <Icon name="refresh" size={16} /> {t("common.retry")}
               </Button>
             }
           />
         ) : state.status === "unavailable" ? (
-          <EmptyState compact icon="phone" title="Numbers coming soon" description={state.message} />
+          <EmptyState compact icon="phone" title={t("home.comingSoon")} description={t.server(state.message)} />
         ) : groups.length === 0 ? (
           <EmptyState
             compact
             icon="search"
-            title={query ? "No matching countries" : "No numbers right now"}
+            title={query ? t("market.noMatchingCountries") : t("market.noNumbersNow")}
             description={
-              query ? "Try a different country name." : `Nothing in stock for ${service.name}. Check back soon.`
+              query ? t("market.tryOtherCountry") : t("market.nothingFor", { service: service.name })
             }
           />
         ) : (

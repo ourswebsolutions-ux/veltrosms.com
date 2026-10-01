@@ -5,6 +5,7 @@ import { Button, type ButtonSize } from "@/components/ui/Button";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import type { FormState } from "@/types/forms";
+import { useT } from "@/i18n/client";
 
 export function SubmitButton({
   children,
@@ -27,6 +28,7 @@ export function SubmitButton({
 
 /** Form-level success/error banner. Field errors render next to their fields. */
 export function FormMessage({ state, className }: { state: FormState; className?: string }) {
+  const t = useT();
   if (!state.message) return null;
   const ok = state.status === "success";
   return (
@@ -39,12 +41,13 @@ export function FormMessage({ state, className }: { state: FormState; className?
       )}
     >
       <Icon name={ok ? "checkCircle" : "alert"} size={18} className="mt-px shrink-0" />
-      {state.message}
+      {t.server(state.message)}
     </p>
   );
 }
 
 export function PolicyConsent({ error }: { error?: string }) {
+  const t = useT();
   return (
     <div>
       <label className="inline-flex cursor-pointer items-start gap-2.5 text-[13px] text-fg-muted">
@@ -55,11 +58,12 @@ export function PolicyConsent({ error }: { error?: string }) {
           aria-invalid={error ? true : undefined}
         />
         <span>
-          I agree with the <span className="text-primary">privacy policy</span> and the processing
-          of the data I submit.
+          {t("forms.consentBefore")}
+          <span className="text-primary">{t("forms.consentPolicy")}</span>
+          {t("forms.consentAfter")}
         </span>
       </label>
-      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger">{t.server(error)}</p>}
     </div>
   );
 }

@@ -1,6 +1,10 @@
+"use client";
+
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/client";
 
 export function Spinner({ size = 20, className }: { size?: number; className?: string }) {
+  const t = useT();
   return (
     <svg
       width={size}
@@ -8,7 +12,7 @@ export function Spinner({ size = 20, className }: { size?: number; className?: s
       viewBox="0 0 24 24"
       className={cn("animate-spin", className)}
       role="status"
-      aria-label="Loading"
+      aria-label={t("common.loading")}
     >
       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity=".2" strokeWidth="3" />
       <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />

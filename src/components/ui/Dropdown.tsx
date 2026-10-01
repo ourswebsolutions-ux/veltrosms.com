@@ -102,7 +102,7 @@ export function Dropdown({
           }}
           className={cn(
             "animate-pop absolute top-full z-50 mt-2 min-w-48 rounded-xl border border-line bg-surface p-1.5 shadow-pop",
-            align === "right" ? "right-0" : "left-0",
+            align === "right" ? "end-0" : "start-0",
             panelClassName,
           )}
         >
@@ -116,7 +116,7 @@ export function Dropdown({
 /** Standard row inside a Dropdown panel. */
 export function dropdownItemClass(active?: boolean) {
   return cn(
-    "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors outline-none hover:bg-surface-muted focus-visible:bg-surface-muted",
+    "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-start text-sm transition-colors outline-none hover:bg-surface-muted focus-visible:bg-surface-muted",
     active ? "font-semibold text-primary" : "text-fg",
   );
 }

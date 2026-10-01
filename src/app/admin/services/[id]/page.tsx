@@ -44,9 +44,9 @@ export default async function AdminServicePage({ params, searchParams }: PagePro
           empty={<EmptyState compact icon="globe" title="No prices" />}
           columns={[
             { header: "Country", cell: (p) => <span className="inline-flex items-center gap-2"><CountryFlag iso2={p.country.iso2} />{p.country.name}{!p.country.isActive && <Badge tone="neutral">Disabled</Badge>}</span> },
-            { header: "Provider cost", className: "text-right tabular-nums text-fg-muted", cell: (p) => formatPrice(p.providerCost, p.providerCurrency) },
-            { header: "Customer price", className: "text-right tabular-nums font-medium", cell: (p) => formatPrice(p.price, p.currency) },
-            { header: "Stock", className: "text-right tabular-nums", cell: (p) => p.available.toLocaleString("en-US") },
+            { header: "Provider cost", className: "text-end tabular-nums text-fg-muted", cell: (p) => formatPrice(p.providerCost, p.providerCurrency) },
+            { header: "Customer price", className: "text-end tabular-nums font-medium", cell: (p) => formatPrice(p.price, p.currency) },
+            { header: "Stock", className: "text-end tabular-nums", cell: (p) => p.available.toLocaleString("en-US") },
             { header: "Synced", className: "whitespace-nowrap text-fg-muted", desktopOnly: true, cell: (p) => formatShortDateTime(p.syncedAt) },
           ]}
         />

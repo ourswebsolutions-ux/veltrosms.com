@@ -10,13 +10,17 @@ import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/cn";
-import { formatPhone, formatShortDateTime } from "@/lib/format";
+import { formatPhone, ltr } from "@/lib/format";
 import { SOUND_KEY, usePref } from "@/lib/preferences";
 import { cancelOrderAction, finishOrderAction, requestAnotherSmsAction } from "@/server/actions/orders";
 import type { OrderActionResult } from "@/server/services/order.service";
 import { ACTIVE_ORDER_STATUSES, type OrderListItem } from "@/types/account";
 import { publishOrder, useLiveOrder } from "./order-store";
-import { ORDER_STATUS, OrderStatus } from "./OrderStatus";
+import { ORDER_STATUS } from "@/i18n/labels";
+import { OrderStatus } from "./OrderStatus";
+import { useLocale, useT } from "@/i18n/client";
+import { intlLocale } from "@/i18n/config";
+import { DateTime } from "@/components/ui/DateTime";
 
 function useNow(active: boolean) {
   const [now, setNow] = useState<number | null>(null);
@@ -33,7 +37,7 @@ function useNow(active: boolean) {
 }
 
 const mmss = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-const time = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const time = (iso: string, locale: string) => new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 
 /** Short notification tone (no audio file needed). */
 function beep() {
@@ -60,6 +64,8 @@ function beep() {
 export function NumberCard({ order: initial, className }: { order: OrderListItem; className?: string }) {
   const router = useRouter();
   const order = useLiveOrder(initial);
+  const t = useT();
+  const { locale } = useLocale();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<"cancel" | "finish" | "another" | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -97,10 +103,10 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
               ? await finishOrderAction(order.id)
               : await requestAnotherSmsAction(order.id);
       } catch {
-        r = { ok: false, code: "PROVIDER_ERROR", message: "We couldn't reach the server. Please try again." };
+        r = { ok: false, code: "PROVIDER_ERROR", message: t("order.unreachable") };
       }
       if (r.ok) publishOrder(r.order);
-      else setError(r.message);
+      else setError(t.server(r.message));
       setBusy(null);
       setConfirmCancel(false);
     });
@@ -111,20 +117,22 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
   const waiting = order.status === "active" || order.status === "pending";
   const cancelBlockedReason =
     order.status === "sms_received" || (live && order.smsCount > 0)
-      ? "A code has arrived, so this number can't be cancelled. Finish it when you're done."
+      ? t("order.cantCancelCode")
       : order.status === "pending"
-        ? "The number is still being issued."
+        ? t("order.stillIssuing")
         : null;
 
   return (
     <article
-      aria-label={`${order.service.name} number for ${order.country.name}`}
+      aria-label={t("order.cardLabel", { service: order.service.name, country: order.country.name })}
       className={cn("@container rounded-xl border bg-surface p-4", waiting ? "border-primary-tint-border" : "border-line", className)}
     >
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <ServiceAvatar name={order.service.name} color={order.service.color} logo={order.service.logo} size={32} />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{order.service.name}</p>
+          <p dir="auto" className="truncate font-semibold rtl:text-right">
+            {order.service.name}
+          </p>
           <p className="flex items-center gap-1.5 text-[13px] text-fg-muted">
             <CountryFlag iso2={order.country.iso2} size={16} />
             {order.country.name} · <Money amount={order.price} currency={order.currency} variant="both" />
@@ -134,44 +142,47 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
       </header>
 
       <div className="mt-3 grid gap-2 @md:grid-cols-2">
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-muted py-1.5 pr-1.5 pl-3">
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-muted py-1.5 pe-1.5 ps-3">
           <div className="min-w-0">
-            <p className="text-xs text-fg-muted">Phone number</p>
-            <p className="truncate font-mono text-[17px] font-semibold tabular-nums">
-              {order.phoneNumber ? formatPhone(order.phoneNumber) : "—"}
-            </p>
+            <p className="text-xs text-fg-muted">{t("order.phone")}</p>
+            <p className="truncate font-mono text-[17px] font-semibold tabular-nums">{order.phoneNumber ? formatPhone(order.phoneNumber) : "—"}</p>
           </div>
-          {order.phoneNumber && <CopyButton value={order.phoneNumber} label="Copy number" />}
+          {order.phoneNumber && <CopyButton value={order.phoneNumber} label={t("order.copyNumber")} />}
         </div>
         <div
-          className={cn("flex items-center justify-between gap-2 rounded-lg py-1.5 pr-1.5 pl-3", order.code ? "bg-success-tint" : "bg-surface-muted")}
+          className={cn("flex items-center justify-between gap-2 rounded-lg py-1.5 pe-1.5 ps-3", order.code ? "bg-success-tint" : "bg-surface-muted")}
           aria-live="polite"
         >
           <div className="min-w-0">
-            <p className="text-xs text-fg-muted">Code{order.smsCount > 1 ? ` (${order.smsCount} SMS)` : ""}</p>
+            <p className="text-xs text-fg-muted">
+              {t("common.code")}
+              {order.smsCount > 1 ? ` (${t("order.smsCount", { count: order.smsCount })})` : ""}
+            </p>
             {order.code ? (
-              <p className="font-mono text-[17px] font-bold tracking-wider text-success">{order.code}</p>
+              <p dir="ltr" className="text-start font-mono text-[17px] font-bold tracking-wider text-success">
+                {order.code}
+              </p>
             ) : live ? (
               <p className="flex items-center gap-1.5 text-[15px] text-fg-muted">
                 <Icon name="refresh" size={14} className="animate-spin [animation-duration:2.5s]" />
-                Waiting for SMS…
+                {t("order.waitingSms")}
               </p>
             ) : (
-              <p className="text-[15px] text-fg-muted">No code</p>
+              <p className="text-[15px] text-fg-muted">{t("order.noCode")}</p>
             )}
           </div>
-          {order.code && <CopyButton value={order.code} label="Copy code" />}
+          {order.code && <CopyButton value={order.code} label={t("order.copyCode")} />}
         </div>
       </div>
 
       {order.messages.length > 0 && (
-        <ol className="mt-2 space-y-1.5" aria-label="Received messages">
+        <ol className="mt-2 space-y-1.5" aria-label={t("order.messages")}>
           {order.messages.map((m) => (
             <li key={m.id} className="rounded-lg bg-surface-muted px-3 py-2 text-[13px]">
               <p className="flex flex-wrap items-center gap-x-2 text-xs text-fg-subtle">
                 {m.sender && <span className="font-medium text-fg-muted">{m.sender}</span>}
                 <time dateTime={m.receivedAt} suppressHydrationWarning>
-                  {time(m.receivedAt)}
+                  {ltr(time(m.receivedAt, intlLocale(locale)))}
                 </time>
                 {m.code && order.messages.length > 1 && <span className="font-mono font-semibold text-success">{m.code}</span>}
               </p>
@@ -181,27 +192,25 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
         </ol>
       )}
 
-      {!live && <p className="mt-2 text-[13px] text-fg-muted">{ORDER_STATUS[order.status].description}</p>}
+      {!live && <p className="mt-2 text-[13px] text-fg-muted">{t(ORDER_STATUS[order.status].description)}</p>}
 
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-fg-subtle">
         <span className="inline-flex items-center gap-1">
-          Order <span className="font-mono">{order.id.slice(0, 8)}</span>
-          <CopyButton value={order.id} label="Copy order ID" className="size-5" />
+          {t("order.order")} <bdi className="font-mono">{order.id.slice(0, 8)}</bdi>
+          <CopyButton value={order.id} label={t("order.copyId")} className="size-5" />
         </span>
-        <time dateTime={order.createdAt} suppressHydrationWarning>
-          {formatShortDateTime(order.createdAt)}
-        </time>
+        <DateTime iso={order.createdAt} short />
       </p>
 
       {live && (
         <footer className="mt-3 flex flex-wrap items-center gap-2">
           {remaining !== null && (
             <span
-              className={cn("mr-auto inline-flex items-center gap-1.5 text-sm tabular-nums", remaining < 120 ? "text-danger" : "text-fg-muted")}
-              aria-label={`Time left ${mmss(remaining)}`}
+              className={cn("me-auto inline-flex items-center gap-1.5 text-sm tabular-nums", remaining < 120 ? "text-danger" : "text-fg-muted")}
+              aria-label={t("order.timeLeft", { time: mmss(remaining) })}
             >
               <Icon name="history" size={16} />
-              {remaining > 0 ? mmss(remaining) : "Expiring…"}
+              <bdi>{remaining > 0 ? mmss(remaining) : t("order.expiring")}</bdi>
             </span>
           )}
           {order.canCancel && (
@@ -210,25 +219,23 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
               variant="outline"
               loading={pending && busy === "cancel"}
               disabled={pending || cancelIn > 0}
-              title={cancelIn > 0 ? `Cancellation opens in ${mmss(cancelIn)}` : undefined}
+              title={cancelIn > 0 ? t("order.cancelOpensIn", { time: mmss(cancelIn) }) : undefined}
               onClick={() => setConfirmCancel(true)}
             >
-              {cancelIn > 0 ? `Cancel in ${mmss(cancelIn)}` : "Cancel & refund"}
+              {cancelIn > 0 ? t("order.cancelIn", { time: mmss(cancelIn) }) : t("order.cancelRefund")}
             </Button>
           )}
           {order.canRequestAnother && (
             <Button size="sm" variant="outline" loading={pending && busy === "another"} disabled={pending} onClick={() => run("another")}>
-              Get another code
+              {t("order.anotherCode")}
             </Button>
           )}
           {order.canFinish && (
             <Button size="sm" loading={pending && busy === "finish"} disabled={pending} onClick={() => run("finish")}>
-              Finish
+              {t("order.finish")}
             </Button>
           )}
-          {!order.canCancel && cancelBlockedReason && (
-            <p className="w-full text-xs text-fg-muted">{cancelBlockedReason}</p>
-          )}
+          {!order.canCancel && cancelBlockedReason && <p className="w-full text-xs text-fg-muted">{cancelBlockedReason}</p>}
         </footer>
       )}
 
@@ -241,30 +248,32 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
       <Modal
         open={confirmCancel}
         onClose={() => !pending && setConfirmCancel(false)}
-        title="Cancel this number?"
+        title={t("order.cancelTitle")}
         footer={
           <>
             <Button variant="muted" onClick={() => setConfirmCancel(false)} disabled={pending}>
-              Keep waiting
+              {t("order.keepWaiting")}
             </Button>
             <Button onClick={() => run("cancel")} loading={pending && busy === "cancel"} disabled={pending}>
-              Cancel number
+              {t("order.cancelNumber")}
             </Button>
           </>
         }
       >
         <div className="space-y-3 text-[15px]">
           <p>
-            <span className="font-mono font-semibold">{order.phoneNumber ? formatPhone(order.phoneNumber) : ""}</span> for{" "}
-            {order.service.name} ({order.country.name}) will be released and can&apos;t receive codes afterwards.
+            {t("order.cancelBody", {
+              number: order.phoneNumber ? formatPhone(order.phoneNumber) : "",
+              service: order.service.name,
+              country: order.country.name,
+            })}
           </p>
           <Alert tone="info">
-            No SMS has arrived, so once the provider confirms the cancellation{" "}
+            {t("order.cancelRefundNote1")}{" "}
             <b>
               <Money amount={order.price} currency={order.currency} variant="both" />
             </b>{" "}
-            returns to your balance. If the provider can&apos;t
-            confirm it yet, nothing changes and you can try again.
+            {t("order.cancelRefundNote2")}
           </Alert>
         </div>
       </Modal>

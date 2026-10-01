@@ -10,6 +10,7 @@ import { PageContainer } from "@/components/ui/PageContainer";
 import { LogoutButton } from "@/components/forms/LogoutButton";
 import { accountNav } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/client";
 
 /** `isAdmin` only decides whether the admin link is shown; access is enforced on the server. */
 export type AccountBarUser = { name: string; email: string; balance: number; currency: string; isAdmin?: boolean } | null;
@@ -34,6 +35,7 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
   // /profile is the "Received numbers" tab; it must not light up for sub-pages.
   const isActive = (href: string) => pathname === href;
   const { base } = useDisplayCurrency();
+  const t = useT();
   // Wallet balance in the platform currency, with the approximate value in the chosen display currency.
   const balance = <Money amount={user?.balance ?? 0} currency={user?.currency ?? base} variant="both" approxClassName="text-white/75" />;
 
@@ -41,7 +43,7 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
     <div className="bg-primary">
       {/* Desktop */}
       <PageContainer className="hidden h-[50px] items-center justify-between gap-4 lg:flex">
-        <nav aria-label="Account" className="flex items-center gap-1">
+        <nav aria-label={t("nav.account")} className="flex items-center gap-1">
           {accountNav.map((item) => (
             <Link
               key={item.href}
@@ -54,7 +56,7 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
                   : "bg-primary-soft text-white hover:bg-white/25",
               )}
             >
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
         </nav>
@@ -62,22 +64,22 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
           <div className="flex items-center gap-2">
             <Link
               href="/profile/top-up"
-              className="flex h-8 items-center gap-1.5 rounded-md bg-primary-soft pr-1 pl-3 text-sm font-semibold text-white tabular-nums hover:bg-white/25 focus-visible:outline-white"
-              title="Add funds"
+              className="flex h-8 items-center gap-1.5 rounded-md bg-primary-soft pe-1 ps-3 text-sm font-semibold text-white tabular-nums hover:bg-white/25 focus-visible:outline-white"
+              title={t("nav.addFunds")}
             >
               <Icon name="wallet" size={16} />
               {balance}
               <span className="flex size-6 items-center justify-center rounded bg-white text-primary" aria-hidden="true">
                 <Icon name="plus" size={14} strokeWidth={2.6} />
               </span>
-              <span className="sr-only">Add funds</span>
+              <span className="sr-only">{t("nav.addFunds")}</span>
             </Link>
             <UserMenu name={user.name} email={user.email} isAdmin={Boolean(user.isAdmin)} />
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <AuthLink href="/login">Log In</AuthLink>
-            <AuthLink href="/register">Sign Up</AuthLink>
+            <AuthLink href="/login">{t("nav.loginButton")}</AuthLink>
+            <AuthLink href="/register">{t("nav.signupButton")}</AuthLink>
           </div>
         )}
       </PageContainer>
@@ -94,7 +96,7 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
           <span className="flex size-6 items-center justify-center rounded-full border-2 border-white/70">
             <Icon name="user" size={14} strokeWidth={2.4} />
           </span>
-          <span className="mr-auto">Profile</span>
+          <span className="me-auto">{t("nav.profile")}</span>
           <span className="tabular-nums">{balance}</span>
           <Icon name="chevronDown" className={cn("transition-transform", open && "rotate-180")} />
         </button>
@@ -115,12 +117,12 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
                   isActive(item.href) ? "bg-primary-tint text-primary" : "text-fg hover:bg-surface-muted",
                 )}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
             {user?.isAdmin && (
               <Link href="/admin" className="block rounded-md px-3 py-2.5 text-[15px] font-medium text-accent hover:bg-surface-muted">
-                Admin panel
+                {t("nav.adminPanel")}
               </Link>
             )}
             {user && (
@@ -134,13 +136,13 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
                   href="/login"
                   className="flex h-10 items-center justify-center rounded-lg border border-primary text-[15px] font-semibold text-primary"
                 >
-                  Log In
+                  {t("nav.loginButton")}
                 </Link>
                 <Link
                   href="/register"
                   className="flex h-10 items-center justify-center rounded-lg bg-primary text-[15px] font-semibold text-white"
                 >
-                  Sign Up
+                  {t("nav.signupButton")}
                 </Link>
               </div>
             )}
@@ -152,9 +154,10 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
 }
 
 function UserMenu({ name, email, isAdmin }: { name: string; email: string; isAdmin: boolean }) {
+  const t = useT();
   return (
     <Dropdown
-      label="Account menu"
+      label={t("nav.accountMenu")}
       align="right"
       panelClassName="w-64"
       triggerClassName="focus-visible:outline-white"
@@ -173,23 +176,23 @@ function UserMenu({ name, email, isAdmin }: { name: string; email: string; isAdm
       <div className="pt-1">
         {isAdmin && (
           <Link href="/admin" data-close className={dropdownItemClass()}>
-            <Icon name="shield" size={18} className="text-accent" /> Admin panel
+            <Icon name="shield" size={18} className="text-accent" /> {t("nav.adminPanel")}
           </Link>
         )}
         <Link href="/profile" data-close className={dropdownItemClass()}>
-          <Icon name="phone" size={18} className="text-fg-muted" /> My numbers
+          <Icon name="phone" size={18} className="text-fg-muted" /> {t("nav.myNumbers")}
         </Link>
         <Link href="/profile/top-up" data-close className={dropdownItemClass()}>
-          <Icon name="plus" size={18} className="text-fg-muted" /> Add funds
+          <Icon name="plus" size={18} className="text-fg-muted" /> {t("nav.addFunds")}
         </Link>
         <Link href="/profile/history" data-close className={dropdownItemClass()}>
-          <Icon name="wallet" size={18} className="text-fg-muted" /> Balance history
+          <Icon name="wallet" size={18} className="text-fg-muted" /> {t("nav.balanceHistory")}
         </Link>
         <Link href="/profile/settings" data-close className={dropdownItemClass()}>
-          <Icon name="settings" size={18} className="text-fg-muted" /> Settings
+          <Icon name="settings" size={18} className="text-fg-muted" /> {t("nav.settings")}
         </Link>
         <Link href="/profile/settings#api-key" data-close className={dropdownItemClass()}>
-          <Icon name="key" size={18} className="text-fg-muted" /> API key
+          <Icon name="key" size={18} className="text-fg-muted" /> {t("nav.apiKey")}
         </Link>
       </div>
       <div className="mt-1 border-t border-line pt-1">

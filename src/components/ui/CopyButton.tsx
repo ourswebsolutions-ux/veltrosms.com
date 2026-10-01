@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { stripBidi } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 /** Copies `value` to the clipboard and briefly confirms. */
 export function CopyButton({
   value,
-  label = "Copy",
+  label,
   className,
   showLabel = false,
 }: {
@@ -17,10 +19,11 @@ export function CopyButton({
   showLabel?: boolean;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const t = useT();
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(stripBidi(value));
       setState("copied");
     } catch {
       setState("failed");
@@ -28,7 +31,7 @@ export function CopyButton({
     window.setTimeout(() => setState("idle"), 1600);
   }
 
-  const text = state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : label;
+  const text = state === "copied" ? t("common.copied") : state === "failed" ? t("common.copyFailed") : (label ?? t("common.copy"));
   return (
     <button
       type="button"

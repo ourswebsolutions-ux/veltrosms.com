@@ -1,10 +1,25 @@
 import { formatMoney } from "./money";
 
+/**
+ * Values that must read left-to-right in every language (prices, phone
+ * numbers, signed amounts) are wrapped in Unicode directional isolates
+ * (LRI … PDI). They are invisible in left-to-right text; in Urdu they keep
+ * "+92 300…" or "−$2.50" in their natural order.
+ */
+export const ltr = (s: string) => `\u2066${s}\u2069`;
+/** Removes the isolates again (e.g. before copying to the clipboard). */
+export const stripBidi = (s: string) => s.replace(/[\u2066-\u2069]/g, "");
+
 const qtyFormatter = new Intl.NumberFormat("en-US");
 
 /** Money display; amounts are integer minor units (see lib/money). */
 export function formatPrice(minorUnits: number, currency = "USD"): string {
-  return formatMoney(minorUnits, currency);
+  return ltr(formatMoney(minorUnits, currency));
+}
+
+/** Grouped number without a unit ("17,243,194"); customer UI adds a translated unit. */
+export function formatCount(n: number): string {
+  return ltr(qtyFormatter.format(n));
 }
 
 export function formatQty(qty: number): string {
@@ -13,7 +28,7 @@ export function formatQty(qty: number): string {
 
 /** Provider numbers are digits with the country code: "15550001000" → "+15550001000". */
 export function formatPhone(phone: string): string {
-  return /^\d+$/.test(phone) ? `+${phone}` : phone;
+  return ltr(/^\d+$/.test(phone) ? `+${phone}` : phone);
 }
 
 export function formatPercent(value: number): string {

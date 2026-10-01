@@ -53,14 +53,14 @@ describe("manual payment details", () => {
     expect(o).toMatchObject({
       available: true,
       flow: "manual",
-      manual: { accountName: "Muhammad Usman", accountNumber: "03246623395", whatsapp: "03246623395", whatsappDigits: "923246623395" },
+      manual: { accountName: "Muhammad Usman", accountNumber: "03246623395", whatsapp: "+923024966223", whatsappDigits: "923024966223" },
     });
     expect(o.methods.map((m) => m.id)).toEqual(["easypaisa", "jazzcash"]);
   });
 
   it("normalizes WhatsApp numbers and transaction IDs", () => {
-    expect(whatsappDigits("0324 6623395")).toBe("923246623395");
-    expect(whatsappDigits("+92 324 6623395")).toBe("923246623395");
+    expect(whatsappDigits("0302 4966223")).toBe("923024966223");
+    expect(whatsappDigits("+92 302 4966223")).toBe("923024966223");
     expect(whatsappDigits("12")).toBeNull();
     expect(normalizeTransactionId(" ab12 3456 ")).toBe("AB123456");
     expect(normalizeTransactionId("12")).toBeNull();

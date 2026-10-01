@@ -1,15 +1,17 @@
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/States";
+import { getT } from "@/i18n/server";
 
-export default function PaymentNotFound() {
+export default async function PaymentNotFound() {
+  const t = await getT();
   return (
     <Card>
       <EmptyState
         icon="search"
-        title="Payment not found"
-        description="This payment doesn't exist or doesn't belong to your account."
-        action={<ButtonLink href="/profile/history?tab=payments">View your payments</ButtonLink>}
+        title={t("err.paymentNotFound")}
+        description={t("err.paymentNotFoundBody")}
+        action={<ButtonLink href="/profile/history?tab=payments">{t("err.viewPayments")}</ButtonLink>}
       />
     </Card>
   );

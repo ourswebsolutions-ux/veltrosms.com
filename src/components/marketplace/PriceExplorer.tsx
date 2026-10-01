@@ -13,13 +13,15 @@ import { EmptyState, ErrorState } from "@/components/ui/States";
 import { SegmentedTabs } from "@/components/ui/Tabs";
 import { Table, TBody, Td, Th, THead, Tr, type SortDirection } from "@/components/ui/Table";
 import { cn } from "@/lib/cn";
-import { formatQty } from "@/lib/format";
+import { formatCount } from "@/lib/format";
 import { parseAmount } from "@/lib/money";
 import type { Availability, CountrySummary, OfferGroup, Result, ServiceSummary } from "@/types/catalog";
 import { CountrySelector } from "./CountrySelector";
 import { PurchaseDialog, type PurchaseIntent, type Viewer } from "./PurchaseDialog";
 import { ServiceSelector } from "./ServiceSelector";
 import { useOffers } from "./useOffers";
+import { useT } from "@/i18n/client";
+import type { MessageKey } from "@/i18n/translate";
 
 export type PriceMode = "service" | "country";
 type SortKey = "name" | "price" | "qty" | "availability";
@@ -27,10 +29,10 @@ type AvailabilityFilter = "any" | "medium" | "high";
 
 const PAGE_SIZE = 25;
 const AVAILABILITY_RANK: Record<Availability, number> = { high: 3, medium: 2, low: 1 };
-const AVAILABILITY_LABEL: Record<Availability, { label: string; tone: "success" | "warning" | "danger" }> = {
-  high: { label: "High", tone: "success" },
-  medium: { label: "Medium", tone: "warning" },
-  low: { label: "Low", tone: "danger" },
+const AVAILABILITY_LABEL: Record<Availability, { label: MessageKey; tone: "success" | "warning" | "danger" }> = {
+  high: { label: "price.high", tone: "success" },
+  medium: { label: "price.medium", tone: "warning" },
+  low: { label: "price.low", tone: "danger" },
 };
 
 /**
@@ -55,6 +57,7 @@ export function PriceExplorer({
   initialResult: Result<OfferGroup[]>;
   viewer: Viewer;
 }) {
+  const t = useT();
   const [mode, setMode] = useState<PriceMode>(initialMode);
   const [serviceSlug, setServiceSlug] = useState(initialService);
   const [countryId, setCountryId] = useState(initialCountry);
@@ -139,19 +142,19 @@ export function PriceExplorer({
   return (
     <>
       <SegmentedTabs
-        label="Browse prices by"
+        label={t("price.browseBy")}
         value={mode}
         onChange={changeMode}
         items={[
-          { value: "service", label: "Search by service" },
-          { value: "country", label: "Search by country" },
+          { value: "service", label: t("price.byService") },
+          { value: "country", label: t("price.byCountry") },
         ]}
         className="w-full sm:w-auto"
       />
 
       <h2 className="mt-7 mb-3 flex items-center gap-2 text-lg font-semibold">
         <Icon name="box" className="text-primary" />
-        {mode === "service" ? "Select service" : "Select country"}
+        {mode === "service" ? t("price.selectService") : t("price.selectCountry")}
       </h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {mode === "service" ? (
@@ -179,44 +182,46 @@ export function PriceExplorer({
         <SearchInput
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder={mode === "service" ? "Search by country" : "Search by service"}
-          aria-label={mode === "service" ? "Filter countries" : "Filter services"}
+          placeholder={mode === "service" ? t("market.searchCountry") : t("price.searchService")}
+          aria-label={mode === "service" ? t("price.filterCountries") : t("price.filterServices")}
         />
       </div>
 
       <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
         <label className="grid min-w-40 flex-1 gap-1 text-xs text-fg-muted sm:flex-none">
-          Availability
+          {t("price.availability")}
           <Select
             value={minAvailability}
             onChange={(e) => setMinAvailability(e.target.value as AvailabilityFilter)}
             className="[&_select]:h-10 [&_select]:text-sm"
             options={[
-              { value: "any", label: "Any availability" },
-              { value: "medium", label: "Medium or high" },
-              { value: "high", label: "High only" },
+              { value: "any", label: t("price.anyAvailability") },
+              { value: "medium", label: t("price.mediumOrHigh") },
+              { value: "high", label: t("price.highOnly") },
             ]}
           />
         </label>
         <label className="grid w-36 gap-1 text-xs text-fg-muted">
-          Max price ({state.status === "ok" ? (state.data[0]?.currency ?? "USD") : "USD"})
+          {t("price.maxPrice", { currency: state.status === "ok" ? (state.data[0]?.currency ?? "USD") : "USD" })}
           <Input
             value={maxPriceInput}
             onChange={(e) => setMaxPriceInput(e.target.value)}
             inputMode="decimal"
-            placeholder="Any"
+            placeholder={t("price.any")}
             aria-invalid={maxPriceInvalid || undefined}
             className={cn("h-10 min-w-0 px-3 text-sm", maxPriceInvalid && "border-danger")}
           />
         </label>
         {narrowed && (
           <button type="button" onClick={clearFilters} className="h-10 px-1 text-sm text-primary hover:underline">
-            Clear filters
+            {t("price.clearFilters")}
           </button>
         )}
         {state.status === "ok" && (
-          <p className="ml-auto h-10 content-center text-[13px] text-fg-muted" aria-live="polite">
-            {rows.length} of {state.data.length} {mode === "service" ? "countries" : "services"}
+          <p className="ms-auto h-10 content-center text-[13px] text-fg-muted" aria-live="polite">
+            {mode === "service"
+              ? t("price.countOfCountries", { shown: rows.length, total: state.data.length })
+              : t("price.countOfServices", { shown: rows.length, total: state.data.length })}
           </p>
         )}
       </div>
@@ -230,24 +235,24 @@ export function PriceExplorer({
           </div>
         ) : state.status === "error" ? (
           <ErrorState
-            description={state.message}
+            description={t.server(state.message)}
             action={
               <Button variant="outline" onClick={reload}>
-                <Icon name="refresh" size={18} /> Try again
+                <Icon name="refresh" size={18} /> {t("common.retry")}
               </Button>
             }
           />
         ) : state.status === "unavailable" ? (
-          <EmptyState icon="phone" title="Prices coming soon" description={state.message} />
+          <EmptyState icon="phone" title={t("price.comingSoon")} description={t.server(state.message)} />
         ) : rows.length === 0 ? (
           <EmptyState
             icon="search"
-            title={narrowed ? "Nothing matches your filters" : "No numbers in stock"}
-            description={narrowed ? "Try a different name, availability or price." : "Try another selection or check back soon."}
+            title={narrowed ? t("price.noMatch") : t("price.noStock")}
+            description={narrowed ? t("price.noMatchHint") : t("price.noStockHint")}
             action={
               narrowed ? (
                 <Button variant="outline" onClick={clearFilters}>
-                  Clear filters
+                  {t("price.clearFilters")}
                 </Button>
               ) : undefined
             }
@@ -258,12 +263,12 @@ export function PriceExplorer({
             <Table className="hidden sm:table">
               <THead>
                 <tr>
-                  <Th {...sortProps("name")}>{mode === "service" ? "Country" : "Service"}</Th>
-                  <Th {...sortProps("price")}>Price</Th>
-                  <Th {...sortProps("qty")}>Quantity</Th>
-                  <Th {...sortProps("availability")}>Availability</Th>
+                  <Th {...sortProps("name")}>{mode === "service" ? t("common.country") : t("common.service")}</Th>
+                  <Th {...sortProps("price")}>{t("common.price")}</Th>
+                  <Th {...sortProps("qty")}>{t("common.quantity")}</Th>
+                  <Th {...sortProps("availability")}>{t("price.availability")}</Th>
                   <Th className="w-px">
-                    <span className="sr-only">Action</span>
+                    <span className="sr-only">{t("price.action")}</span>
                   </Th>
                 </tr>
               </THead>
@@ -283,19 +288,19 @@ export function PriceExplorer({
                     <Td className="tabular-nums">
                       <Money amount={g.minPrice} currency={g.currency} />
                     </Td>
-                    <Td className="tabular-nums">{formatQty(g.totalAvailable)}</Td>
+                    <Td className="tabular-nums">{formatCount(g.totalAvailable)}</Td>
                     <Td>
                       <StatusDot tone={AVAILABILITY_LABEL[g.availability].tone}>
-                        {AVAILABILITY_LABEL[g.availability].label}
+                        {t(AVAILABILITY_LABEL[g.availability].label)}
                       </StatusDot>
                     </Td>
-                    <Td className="pr-0 text-right">
+                    <Td className="pe-0 text-end">
                       <Button
                         size="xs"
                         variant="soft"
                         onClick={() => setIntent({ group: g, tier: lowestTier(g) })}
                       >
-                        Buy
+                        {t("price.buy")}
                       </Button>
                     </Td>
                   </Tr>
@@ -310,7 +315,7 @@ export function PriceExplorer({
                   <button
                     type="button"
                     onClick={() => setIntent({ group: g, tier: lowestTier(g) })}
-                    className="w-full text-left"
+                    className="w-full text-start"
                   >
                     <span className="flex items-center gap-2 text-[15px] font-medium">
                       {mode === "service" ? (
@@ -322,9 +327,9 @@ export function PriceExplorer({
                     </span>
                     <span className="mt-1 grid grid-cols-[1fr_1.4fr_1.2fr] text-[15px] tabular-nums">
                       <Money amount={g.minPrice} currency={g.currency} />
-                      <span>{formatQty(g.totalAvailable)}</span>
+                      <span>{formatCount(g.totalAvailable)}</span>
                       <StatusDot tone={AVAILABILITY_LABEL[g.availability].tone}>
-                        {AVAILABILITY_LABEL[g.availability].label}
+                        {t(AVAILABILITY_LABEL[g.availability].label)}
                       </StatusDot>
                     </span>
                   </button>
@@ -338,7 +343,7 @@ export function PriceExplorer({
                 onClick={() => setShowAll(true)}
                 className="mt-4 w-full rounded-lg border border-primary-tint-border bg-primary-tint py-2 text-sm font-medium text-primary hover:border-primary"
               >
-                Show all {mode === "service" ? "countries" : "services"} ({rows.length})
+                {mode === "service" ? t("price.showAllCountries", { count: rows.length }) : t("price.showAllServices", { count: rows.length })}
               </button>
             )}
           </>

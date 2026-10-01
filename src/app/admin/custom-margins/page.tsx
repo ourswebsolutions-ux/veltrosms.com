@@ -66,17 +66,17 @@ export default async function AdminCustomMarginsPage() {
               </span>
             ),
           },
-          { header: "Minimum margin", className: "text-right tabular-nums font-semibold", cell: (r) => formatPrice(r.minMargin, currency) },
+          { header: "Minimum margin", className: "text-end tabular-nums font-semibold", cell: (r) => formatPrice(r.minMargin, currency) },
           {
             header: "Current price",
-            className: "text-right tabular-nums",
+            className: "text-end tabular-nums",
             desktopOnly: true,
             cell: (r) =>
               r.offer ? (
                 <span title={`Provider cost ${formatPrice(r.offer.providerCost, r.offer.providerCurrency)}`}>
                   {formatPrice(r.offer.price, currency)}
                   {r.offer.priceOverride && (
-                    <Badge tone="neutral" className="ml-1.5">
+                    <Badge tone="neutral" className="ms-1.5">
                       Manual price
                     </Badge>
                   )}
@@ -85,7 +85,7 @@ export default async function AdminCustomMarginsPage() {
                 <span className="text-fg-muted">Not listed</span>
               ),
           },
-          { header: "Updated", className: "whitespace-nowrap pl-6 text-fg-muted", desktopOnly: true, cell: (r) => formatShortDateTime(r.updatedAt) },
+          { header: "Updated", className: "whitespace-nowrap ps-6 text-fg-muted", desktopOnly: true, cell: (r) => formatShortDateTime(r.updatedAt) },
           {
             header: "Actions",
             cell: (r) => (

@@ -64,7 +64,7 @@ export default async function AdminTransactionsPage({ searchParams }: PageProps<
           { header: "Type", cell: (t) => TRANSACTION_LABEL[t.type] },
           {
             header: "Amount",
-            className: "text-right tabular-nums",
+            className: "text-end tabular-nums",
             cell: (t) => (
               <span className={cn("font-medium", t.amount >= 0 && "text-success")}>
                 {t.amount >= 0 ? "+" : "−"}
@@ -72,7 +72,7 @@ export default async function AdminTransactionsPage({ searchParams }: PageProps<
               </span>
             ),
           },
-          { header: "Before → after", className: "whitespace-nowrap text-right tabular-nums text-fg-muted", cell: (t) => `${formatPrice(t.balanceBefore, t.currency)} → ${formatPrice(t.balanceAfter, t.currency)}` },
+          { header: "Before → after", className: "whitespace-nowrap text-end tabular-nums text-fg-muted", cell: (t) => `${formatPrice(t.balanceBefore, t.currency)} → ${formatPrice(t.balanceAfter, t.currency)}` },
           {
             header: "Source",
             cell: (t) =>

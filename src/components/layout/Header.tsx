@@ -21,7 +21,7 @@ export async function Header() {
         <PageContainer className="flex h-14 items-center gap-3 sm:h-16 xl:gap-6">
           <Logo />
           <Navbar />
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
             <CurrencyMenu />
             <LanguageMenu />
             <ThemeToggle className="hidden lg:flex" />

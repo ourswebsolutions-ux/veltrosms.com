@@ -3,15 +3,14 @@ import { ConfirmEmailChangeForm } from "@/components/forms/ConfirmEmailChangeFor
 import { AuthShell } from "@/components/layout/AuthShell";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
+import { getT } from "@/i18n/server";
 import { inspectEmailChange } from "@/server/services/auth.service";
 
-export const metadata: Metadata = { title: "Confirm new email", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("auth.confirmNewTitle"), robots: { index: false } };
+}
 
-const PROBLEMS = {
-  invalid: "This confirmation link is invalid.",
-  expired: "This confirmation link has expired. Request the change again in Settings.",
-  used: "This confirmation link has already been used.",
-} as const;
+const PROBLEMS = { invalid: "auth.confirmNewInvalid", expired: "auth.confirmNewExpired", used: "auth.confirmNewUsed" } as const;
 
 /**
  * Landing page for the email-change link. Opening it changes nothing (mail
@@ -21,18 +20,19 @@ export default async function ConfirmEmailPage({ searchParams }: PageProps<"/con
   const sp = await searchParams;
   const token = typeof sp.token === "string" ? sp.token : "";
   const check = await inspectEmailChange(token);
+  const t = await getT();
 
   return (
     <AuthShell
-      title="Confirm new email"
-      description={check.ok ? "Make this address the login email for your account." : undefined}
-      notice={!check.ok && <Alert tone="error">{PROBLEMS[check.reason]}</Alert>}
+      title={t("auth.confirmNewTitle")}
+      description={check.ok ? t("auth.confirmNewIntro") : undefined}
+      notice={!check.ok && <Alert tone="error">{t(PROBLEMS[check.reason])}</Alert>}
     >
       {check.ok ? (
         <ConfirmEmailChangeForm token={token} email={check.newEmail} />
       ) : (
         <ButtonLink href="/profile/settings#profile" block>
-          Go to settings
+          {t("auth.goToSettings")}
         </ButtonLink>
       )}
     </AuthShell>

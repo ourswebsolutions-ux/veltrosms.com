@@ -8,8 +8,9 @@ import { isNavGroup, mainNav } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { isActivePath } from "@/lib/nav";
 import { HeaderIconButton, SoundToggle, ThemeToggle } from "./HeaderControls";
+import { useT } from "@/i18n/client";
 
-const links = [{ label: "Home", href: "/" }, ...mainNav.flatMap((item) => (isNavGroup(item) ? item.items : [item]))].filter(
+const links = [{ label: "common.home" as const, href: "/" }, ...mainNav.flatMap((item) => (isNavGroup(item) ? item.items : [item]))].filter(
   (l, i, all) => all.findIndex((x) => x.href === l.href) === i,
 );
 
@@ -22,6 +23,7 @@ export function MobileNavbar() {
   const pathname = usePathname();
   const panelId = useId();
   const panelRef = useRef<HTMLElement>(null);
+  const t = useT();
 
   // Close on navigation (state adjusted during render, no effect needed).
   const [lastPath, setLastPath] = useState(pathname);
@@ -46,7 +48,7 @@ export function MobileNavbar() {
   return (
     <div className="lg:hidden">
       <HeaderIconButton
-        label={open ? "Close menu" : "Open menu"}
+        label={open ? t("nav.closeMenu") : t("nav.openMenu")}
         expanded={open}
         controls={panelId}
         onClick={() => setOpen((o) => !o)}
@@ -58,7 +60,7 @@ export function MobileNavbar() {
           <nav
             ref={panelRef}
             id={panelId}
-            aria-label="Mobile"
+            aria-label={t("nav.mobile")}
             onClick={(e) => e.stopPropagation()}
             className="animate-pop max-h-full overflow-y-auto border-t border-line bg-surface px-3 pt-2 pb-5 shadow-pop"
           >
@@ -75,7 +77,7 @@ export function MobileNavbar() {
                         active ? "bg-primary-tint text-primary" : "text-fg hover:bg-surface-muted",
                       )}
                     >
-                      {l.label}
+                      {t(l.label)}
                       <Icon name="chevronRight" size={18} className="text-fg-subtle" />
                     </Link>
                   </li>
@@ -83,7 +85,7 @@ export function MobileNavbar() {
               })}
             </ul>
             <div className="mt-3 flex items-center gap-2 border-t border-line px-3 pt-4">
-              <span className="mr-auto text-sm text-fg-muted">Theme and sound</span>
+              <span className="me-auto text-sm text-fg-muted">{t("nav.themeAndSound")}</span>
               <ThemeToggle />
               <SoundToggle />
             </div>

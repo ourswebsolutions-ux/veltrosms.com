@@ -13,8 +13,12 @@ import { resolveDateRange } from "@/lib/date-range";
 import { formatPrice } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getOrderStats } from "@/server/services/account.service";
+import { getT } from "@/i18n/server";
+import { dateRangeLabel } from "@/i18n/labels";
 
-export const metadata: Metadata = { title: "Query statistics" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("stats.title") };
+}
 
 const pct = (part: number, total: number) => (total ? Math.round((part / total) * 100) : 0);
 
@@ -23,34 +27,62 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
   const user = await requireUser("/profile/statistics");
   const sp = await searchParams;
   const one = (v: string | string[] | undefined) => (typeof v === "string" ? v.slice(0, 20) : undefined);
-  const range = resolveDateRange({ range: one(sp.range), from: one(sp.from), to: one(sp.to) });
-  const stats = await getOrderStats(user.id, range);
+  const range = resolveDateRange({
+    range: one(sp.range),
+    from: one(sp.from),
+    to: one(sp.to),
+  });
+  const [stats, t] = await Promise.all([getOrderStats(user.id, range), getT()]);
+  const rangeLabel = dateRangeLabel(range, t);
   const money = (v: number) => <Money amount={v} currency={stats.currency} variant="stack" />;
   const empty = stats.total === 0 && stats.deposits === 0 && stats.payments.paid + stats.payments.pending + stats.payments.unpaid === 0;
   // The chart shows at most 62 days; longer ranges show their last 62.
   const chartStart = Date.parse(`${stats.byDay[0].date}T00:00:00Z`);
-  const chartTitle =
-    range.preset === "all" ? "Last 14 days" : range.from && range.from.getTime() < chartStart ? "Last 62 days of the range" : range.label;
+  const chartTitle = range.preset === "all" ? t("stats.last14") : range.from && range.from.getTime() < chartStart ? t("stats.last62") : rangeLabel;
 
   return (
     <>
       <Card>
-        <PageHeader title="Query statistics" description={`Your activations, payments and balance · ${range.label} (days in UTC).`} />
+        <PageHeader title={t("stats.title")} description={t("stats.intro", { range: rangeLabel })} />
         <DateRangeFilter range={range} basePath="/profile/statistics" className="mb-5" />
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-          <StatCard icon="phone" label="Numbers ordered" value={String(stats.total)} hint={stats.active ? `${stats.active} active now` : undefined} />
-          <StatCard icon="checkCircle" label="Completed" value={String(stats.completed)} hint={stats.total ? `${pct(stats.completed, stats.total)}% success rate` : undefined} />
-          <StatCard icon="close" label="Cancelled or expired" value={String(stats.cancelled)} hint="Refunded to your balance" />
-          <StatCard icon="message" label="SMS received" value={String(stats.smsReceived)} />
-          <StatCard icon="chart" label="Total spent" value={money(stats.spent)} hint="Purchases minus refunds" />
-          <StatCard icon="plus" label="Deposits" value={money(stats.deposits)} />
+          <StatCard
+            icon="phone"
+            label={t("stats.ordered")}
+            value={String(stats.total)}
+            hint={stats.active ? t("stats.activeNow", { count: stats.active }) : undefined}
+          />
           <StatCard
             icon="checkCircle"
-            label="Successful payments"
-            value={String(stats.payments.paid)}
-            hint={stats.payments.paid ? `${formatPrice(stats.payments.paidAmount, stats.currency)} added` : stats.payments.pending ? `${stats.payments.pending} awaiting payment` : undefined}
+            label={t("stats.completed")}
+            value={String(stats.completed)}
+            hint={
+              stats.total
+                ? t("stats.successRate", {
+                    pct: pct(stats.completed, stats.total),
+                  })
+                : undefined
+            }
           />
-          <StatCard icon="wallet" label="Current balance" value={money(stats.balance)} />
+          <StatCard icon="close" label={t("stats.cancelled")} value={String(stats.cancelled)} hint={t("stats.refunded")} />
+          <StatCard icon="message" label={t("stats.sms")} value={String(stats.smsReceived)} />
+          <StatCard icon="chart" label={t("stats.spent")} value={money(stats.spent)} hint={t("stats.spentHint")} />
+          <StatCard icon="plus" label={t("stats.deposits")} value={money(stats.deposits)} />
+          <StatCard
+            icon="checkCircle"
+            label={t("stats.payments")}
+            value={String(stats.payments.paid)}
+            hint={
+              stats.payments.paid
+                ? t("stats.added", {
+                    amount: formatPrice(stats.payments.paidAmount, stats.currency),
+                  })
+                : stats.payments.pending
+                  ? t("stats.awaiting", { count: stats.payments.pending })
+                  : undefined
+            }
+          />
+          <StatCard icon="wallet" label={t("stats.balance")} value={money(stats.balance)} />
         </div>
       </Card>
 
@@ -58,9 +90,17 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
         <Card>
           <EmptyState
             icon="chart"
-            title={range.preset === "all" ? "No activity yet" : "No activity in this period"}
-            description={range.preset === "all" ? "Charts by day and by service appear after your first number." : "Try a longer date range."}
-            action={range.preset === "all" ? <ButtonLink href="/price">Get a number</ButtonLink> : <ButtonLink href="/profile/statistics" variant="outline">Show all time</ButtonLink>}
+            title={range.preset === "all" ? t("stats.noActivity") : t("stats.noActivityPeriod")}
+            description={range.preset === "all" ? t("stats.noActivityHint") : t("stats.longerRange")}
+            action={
+              range.preset === "all" ? (
+                <ButtonLink href="/price">{t("purchase.title")}</ButtonLink>
+              ) : (
+                <ButtonLink href="/profile/statistics" variant="outline">
+                  {t("stats.showAll")}
+                </ButtonLink>
+              )
+            }
           />
         </Card>
       ) : stats.total === 0 ? null : (
@@ -71,14 +111,14 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
           </Card>
 
           <Card>
-            <PageHeader as="h2" title="By service" className="mb-3" />
+            <PageHeader as="h2" title={t("stats.byService")} className="mb-3" />
             <Table>
               <THead>
                 <tr>
-                  <Th>Service</Th>
-                  <Th className="pr-6 text-right">Orders</Th>
-                  <Th className="hidden sm:table-cell">Success rate</Th>
-                  <Th className="text-right">Spent</Th>
+                  <Th>{t("common.service")}</Th>
+                  <Th className="pe-6 text-end">{t("stats.orders")}</Th>
+                  <Th className="hidden sm:table-cell">{t("stats.rate")}</Th>
+                  <Th className="text-end">{t("stats.spentCol")}</Th>
                 </tr>
               </THead>
               <TBody>
@@ -92,7 +132,7 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
                           <span className="max-w-44 truncate">{s.name}</span>
                         </span>
                       </Td>
-                      <Td className="pr-6 text-right tabular-nums">{s.total}</Td>
+                      <Td className="pe-6 text-end tabular-nums">{s.total}</Td>
                       <Td className="hidden sm:table-cell">
                         <span className="flex items-center gap-2">
                           <span className="h-2 w-24 overflow-hidden rounded-full bg-surface-sunken" aria-hidden="true">
@@ -101,7 +141,7 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
                           <span className="text-sm tabular-nums">{rate}%</span>
                         </span>
                       </Td>
-                      <Td className="pr-0 text-right tabular-nums">{money(s.spent)}</Td>
+                      <Td className="pe-0 text-end tabular-nums">{money(s.spent)}</Td>
                     </Tr>
                   );
                 })}

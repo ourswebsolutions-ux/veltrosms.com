@@ -189,10 +189,14 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
+/** Icons that point along the reading direction; mirrored in right-to-left languages (Urdu). */
+const DIRECTIONAL = new Set<string>(["chevronRight", "chevronLeft", "arrowRight", "logout"]);
+
 export function Icon({
   name,
   size = 20,
   strokeWidth = 1.8,
+  className,
   ...props
 }: { name: IconName; size?: number; strokeWidth?: number } & SVGProps<SVGSVGElement>) {
   return (
@@ -207,6 +211,7 @@ export function Icon({
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      className={DIRECTIONAL.has(name) ? `rtl:-scale-x-100 ${className ?? ""}` : className}
       {...props}
     >
       {PATHS[name]}

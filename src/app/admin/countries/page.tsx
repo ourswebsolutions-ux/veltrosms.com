@@ -53,7 +53,7 @@ export default async function AdminCountriesPage({ searchParams }: PageProps<"/a
           { header: "Country", cell: (c) => <span className="inline-flex items-center gap-2 font-medium"><CountryFlag iso2={c.iso2} />{c.name}</span> },
           { header: "Provider ID", className: "font-mono text-xs", cell: (c) => c.providerCode },
           { header: "Provider", cell: (c) => (c.providerActive ? <Badge tone="success">Listed</Badge> : <Badge tone="neutral">Not listed</Badge>) },
-          { header: "Services in stock", className: "text-right tabular-nums", cell: (c) => c.servicesInStock },
+          { header: "Services in stock", className: "text-end tabular-nums", cell: (c) => c.servicesInStock },
           { header: "Synced", className: "whitespace-nowrap text-fg-muted", desktopOnly: true, cell: (c) => (c.syncedAt ? formatShortDateTime(c.syncedAt) : "—") },
           {
             header: "Local",

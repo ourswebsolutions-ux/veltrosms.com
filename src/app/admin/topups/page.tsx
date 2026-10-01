@@ -73,7 +73,7 @@ export default async function AdminTopUpsPage({ searchParams }: PageProps<"/admi
             ),
           },
           { header: "Customer", cell: (p) => <Link href={`/admin/users/${p.user.id}`} className="block max-w-48 truncate hover:text-primary">{p.user.email}</Link> },
-          { header: "Amount", className: "text-right font-semibold tabular-nums", cell: (p) => formatPrice(p.amount, p.currency) },
+          { header: "Amount", className: "text-end font-semibold tabular-nums", cell: (p) => formatPrice(p.amount, p.currency) },
           { header: "Method", cell: (p) => (p.method === "jazzcash" ? "JazzCash" : "Easypaisa") },
           { header: "Transaction ID", className: "font-mono text-xs", cell: (p) => p.providerPaymentId ?? "—" },
           { header: "Status", cell: (p) => <PaymentStatusBadge status={p.status} manual /> },

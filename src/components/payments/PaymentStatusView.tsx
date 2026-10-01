@@ -8,11 +8,14 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPrice } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import { whatsappHref } from "@/lib/whatsapp";
 import { verifyTopUpAction } from "@/server/actions/payments";
 import type { ManualPaymentDetails, PaymentListItem } from "@/types/account";
 import { PaymentStatusBadge } from "./PaymentStatus";
+import { useT } from "@/i18n/client";
+import type { MessageKey } from "@/i18n/translate";
+import { DateTime } from "@/components/ui/DateTime";
 
 const POLL_MS = 4_000;
 /** Stop automatic polling after this long; "Check now" still works. */
@@ -20,54 +23,54 @@ const POLL_FOR_MS = 15 * 60_000;
 
 const OPEN = ["pending", "processing"];
 
-const VIEW: Record<PaymentListItem["status"], { icon: IconName; tone: string; title: string; body: string }> = {
+const VIEW: Record<PaymentListItem["status"], { icon: IconName; tone: string; title: MessageKey; body: MessageKey }> = {
   pending: {
     icon: "history",
     tone: "bg-primary-tint text-primary",
-    title: "Waiting for your payment",
-    body: "Finish the payment on the provider's page. This page updates by itself once the provider confirms it.",
+    title: "psv.pending.title",
+    body: "psv.pending.body",
   },
   processing: {
     icon: "refresh",
     tone: "bg-primary-tint text-primary",
-    title: "Payment is being processed",
-    body: "The provider is confirming your payment. Your balance is credited automatically — you can safely leave this page.",
+    title: "psv.processing.title",
+    body: "psv.processing.body",
   },
   paid: {
     icon: "checkCircle",
     tone: "bg-success-tint text-success",
-    title: "Funds added",
-    body: "The payment was confirmed and your balance has been credited.",
+    title: "psv.paid.title",
+    body: "psv.paid.body",
   },
   failed: {
     icon: "alert",
     tone: "bg-danger-tint text-danger",
-    title: "Payment failed",
-    body: "The payment didn't go through and your balance was not credited. You can try again.",
+    title: "psv.failed.title",
+    body: "psv.failed.body",
   },
   cancelled: {
     icon: "close",
     tone: "bg-surface-muted text-fg-muted",
-    title: "Payment cancelled",
-    body: "The payment was cancelled and your balance was not credited.",
+    title: "psv.cancelled.title",
+    body: "psv.cancelled.body",
   },
   expired: {
     icon: "history",
     tone: "bg-surface-muted text-fg-muted",
-    title: "Payment session expired",
-    body: "This payment wasn't completed in time and your balance was not credited. Start a new top-up to add funds.",
+    title: "psv.expired.title",
+    body: "psv.expired.body",
   },
   refunded: {
     icon: "refresh",
     tone: "bg-warning/15 text-[#a37c00] dark:text-warning",
-    title: "Payment refunded",
-    body: "The provider returned this payment. Contact support if your balance needs a correction.",
+    title: "psv.refunded.title",
+    body: "psv.refunded.body",
   },
   rejected: {
     icon: "alert",
     tone: "bg-danger-tint text-danger",
-    title: "Top-up request rejected",
-    body: "Your top-up request was rejected. Please check the provided details or contact support.",
+    title: "psv.rejected.title",
+    body: "psv.rejected.body",
   },
 };
 
@@ -76,14 +79,14 @@ const MANUAL_VIEW: Partial<Record<PaymentListItem["status"], (typeof VIEW)["pend
   pending: {
     icon: "history",
     tone: "bg-primary-tint text-primary",
-    title: "Awaiting manual verification",
-    body: "Top-up request submitted successfully. Your balance will be updated after manual verification.",
+    title: "psvManual.pending.title",
+    body: "psvManual.pending.body",
   },
   paid: {
     icon: "checkCircle",
     tone: "bg-success-tint text-success",
-    title: "Top-up approved",
-    body: "Your top-up has been approved and your wallet has been credited.",
+    title: "psvManual.paid.title",
+    body: "psvManual.paid.body",
   },
 };
 
@@ -105,6 +108,7 @@ export function PaymentStatusView({
   email?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const [payment, setPayment] = useState(initial);
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<string | null>(null);
@@ -125,7 +129,9 @@ export function PaymentStatusView({
     const tick = async () => {
       if (document.visibilityState !== "visible" || Date.now() - started > POLL_FOR_MS) return;
       try {
-        const res = await fetch(`/api/payments/${payment.id}`, { cache: "no-store" });
+        const res = await fetch(`/api/payments/${payment.id}`, {
+          cache: "no-store",
+        });
         if (res.ok && !stopped) setPayment(((await res.json()) as { payment: PaymentListItem }).payment);
       } catch {
         /* transient: next tick */
@@ -151,15 +157,15 @@ export function PaymentStatusView({
       try {
         const r = await verifyTopUpAction(payment.id);
         if (r.ok) setPayment(r.payment);
-        else setNotice(r.message);
+        else setNotice(t.server(r.message));
       } catch {
-        setNotice("We couldn't reach the server. Please try again.");
+        setNotice(t("order.unreachable"));
       }
     });
   }
 
   const v = (payment.manual && MANUAL_VIEW[payment.status]) || VIEW[payment.status];
-  const wa = help ? whatsappHref(help, { email, reference: payment.reference }) : null;
+  const wa = help ? whatsappHref(help, { email, reference: payment.reference }, t) : null;
   const money = (n: number) => formatPrice(n, payment.currency);
 
   return (
@@ -168,59 +174,69 @@ export function PaymentStatusView({
         <span className={cn("flex size-16 items-center justify-center rounded-full", v.tone)}>
           <Icon name={v.icon} size={30} className={payment.status === "processing" ? "animate-spin [animation-duration:2.5s]" : undefined} />
         </span>
-        <h1 className="mt-3 text-2xl font-semibold">{v.title}</h1>
-        {payment.status === "paid" && <p className="mt-1 text-3xl font-bold text-success tabular-nums">+{money(payment.amount)}</p>}
-        <p className="mt-2 max-w-md text-[15px] text-fg-muted">{v.body}</p>
+        <h1 className="mt-3 text-2xl font-semibold">{t(v.title)}</h1>
+        {payment.status === "paid" && (
+          <p className="mt-1 text-3xl font-bold text-success tabular-nums">
+            <bdi>+{money(payment.amount)}</bdi>
+          </p>
+        )}
+        <p className="mt-2 max-w-md text-[15px] text-fg-muted">{t(v.body)}</p>
         {payment.status === "rejected" && payment.rejectionReason && (
-          <p className="mt-3 max-w-md rounded-lg bg-danger-tint px-3 py-2 text-sm text-danger">Reason: {payment.rejectionReason}</p>
+          <p className="mt-3 max-w-md rounded-lg bg-danger-tint px-3 py-2 text-sm text-danger">
+            {t("pay.reason")} <bdi>{payment.rejectionReason}</bdi>
+          </p>
         )}
       </div>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-xl bg-surface-muted p-4 text-[15px]">
-        <dt className="text-fg-muted">Status</dt>
+        <dt className="text-fg-muted">{t("common.status")}</dt>
         <dd className="flex justify-end">
           <PaymentStatusBadge status={payment.status} manual={payment.manual} />
         </dd>
-        <dt className="text-fg-muted">Reference</dt>
+        <dt className="text-fg-muted">{t("psv.reference")}</dt>
         <dd className="flex items-center justify-end gap-1 font-mono">
-          {payment.reference}
-          <CopyButton value={payment.reference} label="Copy reference" className="size-6" />
+          <bdi>{payment.reference}</bdi>
+          <CopyButton value={payment.reference} label={t("psv.copyReference")} className="size-6" />
         </dd>
         {payment.transactionId && (
           <>
-            <dt className="text-fg-muted">Transaction ID</dt>
-            <dd className="text-right font-mono break-all">{payment.transactionId}</dd>
-          </>
-        )}
-        <dt className="text-fg-muted">{payment.manual ? "Paid with" : "Method"}</dt>
-        <dd className="text-right">
-          {payment.methodLabel}
-          {payment.test && (
-            <Badge tone="neutral" className="ml-1.5">
-              Test
-            </Badge>
-          )}
-        </dd>
-        <dt className="text-fg-muted">Amount</dt>
-        <dd className="text-right tabular-nums">{money(payment.amount)}</dd>
-        <dt className="text-fg-muted">Fee</dt>
-        <dd className="text-right tabular-nums">{payment.fee ? money(payment.fee) : "Free"}</dd>
-        <dt className="text-fg-muted">Total</dt>
-        <dd className="text-right font-semibold tabular-nums">{money(payment.total)}</dd>
-        <dt className="text-fg-muted">Submitted</dt>
-        <dd className="text-right" suppressHydrationWarning>
-          {formatDateTime(payment.createdAt)}
-        </dd>
-        {(payment.reviewedAt ?? payment.paidAt) && (
-          <>
-            <dt className="text-fg-muted">{payment.status === "rejected" ? "Rejected" : payment.manual ? "Approved" : "Paid"}</dt>
-            <dd className="text-right" suppressHydrationWarning>
-              {formatDateTime((payment.reviewedAt ?? payment.paidAt)!)}
+            <dt className="text-fg-muted">{t("psv.transactionId")}</dt>
+            <dd className="text-end font-mono break-all">
+              <bdi>{payment.transactionId}</bdi>
             </dd>
           </>
         )}
-        <dt className="border-t border-line pt-2.5 text-fg-muted">Your balance</dt>
-        <dd className="border-t border-line pt-2.5 text-right font-semibold tabular-nums">{formatPrice(balance, payment.currency)}</dd>
+        <dt className="text-fg-muted">{payment.manual ? t("topup.paidWith") : t("pay.method")}</dt>
+        <dd className="text-end">
+          {payment.methodLabel}
+          {payment.test && (
+            <Badge tone="neutral" className="ms-1.5">
+              {t("pay.test")}
+            </Badge>
+          )}
+        </dd>
+        <dt className="text-fg-muted">{t("common.amount")}</dt>
+        <dd className="text-end tabular-nums">{money(payment.amount)}</dd>
+        <dt className="text-fg-muted">{t("pay.fee")}</dt>
+        <dd className="text-end tabular-nums">{payment.fee ? money(payment.fee) : t("topup.free")}</dd>
+        <dt className="text-fg-muted">{t("common.total")}</dt>
+        <dd className="text-end font-semibold tabular-nums">{money(payment.total)}</dd>
+        <dt className="text-fg-muted">{t("pay.submitted")}</dt>
+        <dd className="text-end">
+          <DateTime iso={payment.createdAt} />
+        </dd>
+        {(payment.reviewedAt ?? payment.paidAt) && (
+          <>
+            <dt className="text-fg-muted">
+              {payment.status === "rejected" ? t("pay.status.rejected") : payment.manual ? t("pay.status.approved") : t("pay.status.paid")}
+            </dt>
+            <dd className="text-end">
+              <DateTime iso={(payment.reviewedAt ?? payment.paidAt)!} />
+            </dd>
+          </>
+        )}
+        <dt className="border-t border-line pt-2.5 text-fg-muted">{t("purchase.yourBalance")}</dt>
+        <dd className="border-t border-line pt-2.5 text-end font-semibold tabular-nums">{formatPrice(balance, payment.currency)}</dd>
       </dl>
 
       {notice && <Alert tone="warning">{notice}</Alert>}
@@ -228,28 +244,28 @@ export function PaymentStatusView({
       <div className="flex flex-wrap justify-center gap-2">
         {payment.status === "paid" ? (
           <>
-            <ButtonLink href="/price">Buy a number</ButtonLink>
+            <ButtonLink href="/price">{t("market.buyNumber")}</ButtonLink>
             <ButtonLink href="/profile/top-up" variant="outline">
-              Add more funds
+              {t("psv.addMore")}
             </ButtonLink>
           </>
         ) : payment.manual && open ? (
           <>
             {wa && (
               <ButtonLink href={wa} target="_blank" rel="noopener noreferrer" className="!bg-[#25d366] hover:!bg-[#1ebe5a]">
-                <Icon name="message" size={16} /> Contact on WhatsApp
+                <Icon name="message" size={16} /> {t("wa.contact")}
               </ButtonLink>
             )}
             <Button variant="outline" onClick={checkNow} loading={pending} disabled={pending}>
-              <Icon name="refresh" size={16} /> Refresh status
+              <Icon name="refresh" size={16} /> {t("psv.refresh")}
             </Button>
           </>
         ) : payment.manual ? (
           <>
-            <ButtonLink href="/profile/top-up">{payment.status === "rejected" ? "Submit a new request" : "Add more funds"}</ButtonLink>
+            <ButtonLink href="/profile/top-up">{payment.status === "rejected" ? t("psv.newRequest") : t("psv.addMore")}</ButtonLink>
             {wa && payment.status === "rejected" && (
               <ButtonLink href={wa} target="_blank" rel="noopener noreferrer" variant="outline">
-                <Icon name="message" size={16} /> Contact support
+                <Icon name="message" size={16} /> {t("psv.contactSupport")}
               </ButtonLink>
             )}
           </>
@@ -257,18 +273,18 @@ export function PaymentStatusView({
           <>
             {payment.checkoutUrl && (
               <ButtonLink href={payment.checkoutUrl}>
-                Continue to payment <Icon name="arrowRight" size={16} />
+                {t("topup.continue")} <Icon name="arrowRight" size={16} />
               </ButtonLink>
             )}
             <Button variant="outline" onClick={checkNow} loading={pending} disabled={pending}>
-              <Icon name="refresh" size={16} /> Check status
+              <Icon name="refresh" size={16} /> {t("psv.checkStatus")}
             </Button>
           </>
         ) : (
           <>
-            <ButtonLink href="/profile/top-up">{payment.status === "refunded" ? "Add funds" : "Try again"}</ButtonLink>
+            <ButtonLink href="/profile/top-up">{payment.status === "refunded" ? t("nav.addFunds") : t("common.retry")}</ButtonLink>
             <Button variant="outline" onClick={checkNow} loading={pending} disabled={pending}>
-              <Icon name="refresh" size={16} /> Check again
+              <Icon name="refresh" size={16} /> {t("psv.checkAgain")}
             </Button>
           </>
         )}

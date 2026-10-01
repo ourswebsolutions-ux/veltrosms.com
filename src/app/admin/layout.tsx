@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { ToastProvider } from "@/components/ui/Toast";
+import { I18nProvider } from "@/i18n/client";
+import { en } from "@/i18n/messages/en";
 import { requireAdminPage } from "@/server/admin/guard";
 
 export const metadata: Metadata = {
@@ -14,21 +16,32 @@ export const metadata: Metadata = {
  * Admin shell. Access is checked here and again in every page (layouts and
  * pages render independently); non-admins get a 404.
  */
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const path = (await headers()).get("x-pathname") ?? "/admin";
-  const admin = await requireAdminPage(path.startsWith("/admin") ? path : "/admin");
+  const admin = await requireAdminPage(
+    path.startsWith("/admin") ? path : "/admin",
+  );
+  // The admin panel is English and left-to-right whatever language the visitor chose for the site.
   return (
-    <PageContainer className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 py-4 lg:grid-cols-[200px_minmax(0,1fr)] lg:py-6">
-      <aside className="space-y-3 lg:sticky lg:top-[130px]">
-        <div className="hidden rounded-lg bg-accent-tint px-3 py-2 text-xs lg:block">
-          <p className="font-semibold text-accent">Administrator</p>
-          <p className="truncate text-fg-muted">{admin.email}</p>
-        </div>
-        <AdminNav />
-      </aside>
-      <ToastProvider>
-        <div className="min-w-0 space-y-4">{children}</div>
-      </ToastProvider>
-    </PageContainer>
+    <I18nProvider locale="en" messages={en}>
+      <div dir="ltr">
+        <PageContainer className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 py-4 lg:grid-cols-[200px_minmax(0,1fr)] lg:py-6">
+          <aside className="space-y-3 lg:sticky lg:top-[130px]">
+            <div className="hidden rounded-lg bg-accent-tint px-3 py-2 text-xs lg:block">
+              <p className="font-semibold text-accent">Administrator</p>
+              <p className="truncate text-fg-muted">{admin.email}</p>
+            </div>
+            <AdminNav />
+          </aside>
+          <ToastProvider>
+            <div className="min-w-0 space-y-4">{children}</div>
+          </ToastProvider>
+        </PageContainer>
+      </div>
+    </I18nProvider>
   );
 }

@@ -74,7 +74,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  /* Manrope for Latin; Urdu, Hindi and Bengali glyphs fall through to the matching Noto face. */
+  --font-sans: var(--font-manrope), var(--font-arabic), var(--font-devanagari), var(--font-bengali), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --color-primary: var(--color-primary);

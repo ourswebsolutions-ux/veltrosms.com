@@ -8,11 +8,12 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { NumberCard } from "@/components/orders/NumberCard";
 import { Modal } from "@/components/ui/Modal";
-import { formatPrice, formatQty } from "@/lib/format";
+import { formatCount, formatPrice } from "@/lib/format";
 import { requestNumberAction } from "@/server/actions/orders";
 import type { OrderActionResult } from "@/server/services/order.service";
 import type { Viewer } from "@/types/account";
 import type { OfferGroup, PriceTier } from "@/types/catalog";
+import { useT } from "@/i18n/client";
 
 export type PurchaseIntent = { group: OfferGroup; tier: PriceTier };
 export type { Viewer };
@@ -39,6 +40,7 @@ export function PurchaseDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<OrderActionResult | null>(null);
   const [price, setPrice] = useState<number | null>(null);
@@ -78,7 +80,7 @@ export function PurchaseDialog({
       } catch {
         // Unknown whether the server got it: keep the key so a retry returns
         // the same order instead of buying twice.
-        setResult({ ok: false, code: "PROVIDER_ERROR", message: "We couldn't confirm the purchase. Check your connection and press Buy again — you won't be charged twice." });
+        setResult({ ok: false, code: "PROVIDER_ERROR", message: t("purchase.lostResponse") });
       }
     });
   }
@@ -90,67 +92,64 @@ export function PurchaseDialog({
     <Modal
       open={intent !== null}
       onClose={close}
-      title={bought ? "Your number is ready" : "Get a number"}
+      title={bought ? t("purchase.ready") : t("purchase.title")}
       footer={
         bought ? (
           <>
             <ButtonLink href="/profile" variant="muted">
-              All my numbers
+              {t("purchase.allMyNumbers")}
             </ButtonLink>
-            <Button onClick={close}>Done</Button>
+            <Button onClick={close}>{t("purchase.done")}</Button>
           </>
         ) : viewer.signedIn ? (
           <>
             <Button variant="muted" onClick={close} disabled={pending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={confirm} loading={pending} disabled={pending || insufficient}>
-              {`Buy for ${formatPrice(agreedPrice, currency)}`}
+              {t("purchase.buyFor", { price: formatPrice(agreedPrice, currency) })}
             </Button>
           </>
         ) : (
           <>
             <ButtonLink href="/login" variant="outline">
-              Log in
+              {t("nav.login")}
             </ButtonLink>
-            <ButtonLink href="/register">Create account</ButtonLink>
+            <ButtonLink href="/register">{t("auth.createAccountButton")}</ButtonLink>
           </>
         )
       }
     >
       {intent && bought ? (
         <div className="space-y-3">
-          <Alert tone="success">
-            Enter this number on {bought.service.name}. The code appears here and in your active numbers as soon as the
-            SMS arrives. If no SMS arrives, cancel it to get the charge back.
-          </Alert>
+          <Alert tone="success">{t("purchase.readyHint", { service: bought.service.name })}</Alert>
           <NumberCard order={bought} />
         </div>
       ) : intent ? (
         <div className="space-y-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-[15px]">
-            <dt className="text-fg-muted">Service</dt>
+            <dt className="text-fg-muted">{t("common.service")}</dt>
             <dd className="flex items-center gap-2 font-medium">
               <ServiceAvatar name={intent.group.service.name} color={intent.group.service.color} logo={intent.group.service.logo} size={22} />
               {intent.group.service.name}
             </dd>
-            <dt className="text-fg-muted">Country</dt>
+            <dt className="text-fg-muted">{t("common.country")}</dt>
             <dd className="flex items-center gap-2 font-medium">
               <CountryFlag iso2={intent.group.country.iso2} />
               {intent.group.country.name}
             </dd>
             <ChargeRows amount={agreedPrice} currency={currency} priceClassName="font-semibold text-primary" />
-            <dt className="text-fg-muted">Available</dt>
-            <dd>{formatQty(intent.tier.available)}</dd>
+            <dt className="text-fg-muted">{t("purchase.available")}</dt>
+            <dd>{formatCount(intent.tier.available)}</dd>
             {viewer.signedIn && (
               <>
-                <dt className="text-fg-muted">Your balance</dt>
+                <dt className="text-fg-muted">{t("purchase.yourBalance")}</dt>
                 <dd className={insufficient ? "font-semibold text-danger tabular-nums" : "font-medium tabular-nums"}>
                   <Money amount={viewer.balance} currency={viewer.currency} variant="both" />
                 </dd>
                 {!insufficient && (
                   <>
-                    <dt className="text-fg-muted">After purchase</dt>
+                    <dt className="text-fg-muted">{t("purchase.after")}</dt>
                     <dd className="font-medium tabular-nums">
                       <Money amount={after} currency={viewer.currency} variant="both" />
                     </dd>
@@ -161,41 +160,43 @@ export function PurchaseDialog({
           </dl>
 
           {!viewer.signedIn ? (
-            <Alert>Log in or create an account to get a number. You only pay for activations that receive a code.</Alert>
+            <Alert>{t("purchase.guest")}</Alert>
           ) : insufficient ? (
             <Alert
               tone="warning"
-              title="Not enough balance"
+              title={t("purchase.noFunds")}
               action={
                 <ButtonLink href="/profile/top-up" size="sm" variant="outline">
-                  Add funds
+                  {t("nav.addFunds")}
                 </ButtonLink>
               }
             >
-              This number costs {formatPrice(agreedPrice, currency)}; you need{" "}
-              {formatPrice(agreedPrice - (viewer.signedIn ? viewer.balance : 0), currency)} more. Top up your balance to buy it.
+              {t("purchase.noFundsBody", {
+                price: formatPrice(agreedPrice, currency),
+                missing: formatPrice(agreedPrice - (viewer.signedIn ? viewer.balance : 0), currency),
+              })}
             </Alert>
           ) : priceChanged ? (
             <Alert
               tone="warning"
-              title="The price has changed"
+              title={t("purchase.priceChanged")}
               action={
                 priceChanged.length > 0 && (
                   <Button size="sm" variant="outline" onClick={() => { setPrice(priceChanged[0]); setResult(null); }}>
-                    {`Use ${formatPrice(priceChanged[0], currency)}`}
+                    {t("purchase.usePrice", { price: formatPrice(priceChanged[0], currency) })}
                   </Button>
                 )
               }
             >
-              {priceChanged.length ? "Confirm the new price to continue." : "This offer is no longer available."}
+              {priceChanged.length ? t("purchase.confirmNewPrice") : t("srv.orders.offerGone")}
             </Alert>
           ) : result && !result.ok ? (
             <Alert tone={result.code === "INSUFFICIENT_FUNDS" || result.code === "NO_NUMBERS" ? "warning" : "error"}>
-              {result.message}
+              {t.server(result.message)}
             </Alert>
           ) : (
             <p className="text-[13px] text-fg-muted">
-              You&apos;re charged now. If no SMS arrives, cancel the number and the charge is returned to your balance.
+              {t("purchase.chargedNow")}
             </p>
           )}
         </div>

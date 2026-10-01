@@ -79,7 +79,7 @@ export default async function AdminPaymentPage({ params }: PageProps<"/admin/pay
           empty={<EmptyState compact icon="wallet" title="Not credited" description="No ledger entry exists for this payment." />}
           columns={[
             { header: "Type", cell: (t) => TRANSACTION_LABEL[t.type] },
-            { header: "Amount", className: "text-right tabular-nums", cell: (t) => `+${money(t.amount)}` },
+            { header: "Amount", className: "text-end tabular-nums", cell: (t) => `+${money(t.amount)}` },
             { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (t) => formatShortDateTime(t.createdAt) },
           ]}
         />

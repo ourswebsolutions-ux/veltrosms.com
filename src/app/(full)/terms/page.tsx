@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/LegalPage";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Terms of service" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("nav.terms") };
+}
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const t = await getT();
   return (
     <LegalPage
-      title="Terms of service"
+      title={t("nav.terms")}
       sections={[
-        { heading: "The service", body: "Temporary virtual numbers for receiving SMS verification codes." },
-        { heading: "Accounts and balance", body: "Registration, top-ups, charges and refunds for unsuccessful activations." },
-        { heading: "Acceptable use", body: "Prohibited activities and the consequences of misuse." },
-        { heading: "API use", body: "Rate limits, key security and responsibilities of integrators." },
-        { heading: "Liability", body: "Limits of liability and service availability." },
-        { heading: "Changes", body: "How we notify you about changes to these terms." },
+        { heading: t("terms.service"), body: t("terms.serviceBody") },
+        { heading: t("terms.accounts"), body: t("terms.accountsBody") },
+        { heading: t("terms.acceptable"), body: t("terms.acceptableBody") },
+        { heading: t("terms.api"), body: t("terms.apiBody") },
+        { heading: t("terms.liability"), body: t("terms.liabilityBody") },
+        { heading: t("terms.changes"), body: t("terms.changesBody") },
       ]}
     />
   );

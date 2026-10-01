@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/client";
 
 /** Brand emblem (envelope with the VMG monogram), cut from public/logo.png. */
 export function LogoMark({ className }: { className?: string }) {
@@ -10,8 +13,9 @@ export function LogoMark({ className }: { className?: string }) {
 
 /** Emblem + two-colour wordmark, as in the logo: "Virtu" navy, "MSG" gold. */
 export function Logo({ className }: { className?: string }) {
+  const t = useT();
   return (
-    <Link href="/" className={cn("flex shrink-0 items-center gap-2 text-fg", className)} aria-label={`${siteConfig.name} home`}>
+    <Link href="/" className={cn("flex shrink-0 items-center gap-2 text-fg", className)} aria-label={t("nav.logoHome", { name: siteConfig.name })}>
       <LogoMark className="size-9" />
       <span className="text-[22px] leading-none font-extrabold tracking-tight">
         <span className="text-primary dark:text-fg">{siteConfig.shortName}</span>

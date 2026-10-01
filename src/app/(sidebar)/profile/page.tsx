@@ -14,8 +14,12 @@ import { EmptyState } from "@/components/ui/States";
 import { requireUser } from "@/server/auth/session";
 import { getAccountProfile, listTransactions } from "@/server/services/account.service";
 import { listActiveOrders, listOrders } from "@/server/services/order.service";
+import { getLocale, getT } from "@/i18n/server";
+import { intlLocale } from "@/i18n/config";
 
-export const metadata: Metadata = { title: "Received numbers" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("nav.receivedNumbers") };
+}
 
 export default async function ProfilePage() {
   const user = await requireUser("/profile");
@@ -26,7 +30,8 @@ export default async function ProfilePage() {
     listTransactions(user.id, { pageSize: 5 }),
   ]);
   const p = profile;
-  const memberSince = new Date(p.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
+  const memberSince = new Date(p.createdAt).toLocaleDateString(intlLocale(locale), { month: "long", year: "numeric" });
 
   return (
     <>
@@ -39,50 +44,52 @@ export default async function ProfilePage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-xl font-semibold">{p.name}</h1>
-                <Badge tone={p.status === "active" ? "success" : "danger"}>{p.status === "active" ? "Active" : "Suspended"}</Badge>
-                {!p.emailVerified && <Badge tone="warning">Email not confirmed</Badge>}
+                <Badge tone={p.status === "active" ? "success" : "danger"}>{p.status === "active" ? t("profile.active") : t("profile.suspended")}</Badge>
+                {!p.emailVerified && <Badge tone="warning">{t("auth.notConfirmed")}</Badge>}
               </div>
-              <p className="truncate text-[15px] text-fg-muted">{p.email}</p>
+              <p className="truncate text-[15px] text-fg-muted">
+                <bdi>{p.email}</bdi>
+              </p>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[13px] text-fg-muted">
-                <span>Member since {memberSince}</span>
+                <span>{t("profile.memberSince", { date: memberSince })}</span>
                 <span className="inline-flex items-center gap-1">
-                  ID <span className="font-mono">{p.id.slice(0, 8)}</span>
-                  <CopyButton value={p.id} label="Copy user ID" className="size-6" />
+                  {t("profile.id")} <bdi className="font-mono">{p.id.slice(0, 8)}</bdi>
+                  <CopyButton value={p.id} label={t("profile.copyId")} className="size-6" />
                 </span>
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4 rounded-xl border border-line bg-surface-muted/60 px-4 py-3">
             <div>
-              <p className="text-[13px] text-fg-muted">Balance</p>
+              <p className="text-[13px] text-fg-muted">{t("common.balance")}</p>
               <p className="text-2xl font-semibold tabular-nums">
                 <Money amount={p.balance} currency={p.currency} variant="stack" approxClassName="text-sm" />
               </p>
             </div>
             <ButtonLink href="/profile/top-up">
-              <Icon name="plus" size={18} /> Top up
+              <Icon name="plus" size={18} /> {t("nav.topUp")}
             </ButtonLink>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-2 border-t border-line pt-4">
           <ButtonLink href="/price" size="sm">
-            Get a number
+            {t("purchase.title")}
           </ButtonLink>
           <ButtonLink href="/profile/settings#api-key" size="sm" variant="outline">
-            <Icon name="key" size={16} /> {p.apiKeyHint ? "API key" : "Create API key"}
+            <Icon name="key" size={16} /> {p.apiKeyHint ? t("nav.apiKey") : t("profile.createApiKey")}
           </ButtonLink>
           <ButtonLink href="/profile/settings" size="sm" variant="muted">
-            <Icon name="settings" size={16} /> Settings
+            <Icon name="settings" size={16} /> {t("nav.settings")}
           </ButtonLink>
-          <LogoutButton className="ml-auto" />
+          <LogoutButton className="ms-auto" />
         </div>
       </Card>
 
       <Card>
         <PageHeader
           as="h2"
-          title="Active numbers"
-          description="Numbers that are waiting for or have received an SMS."
+          title={t("market.activeNumbers")}
+          description={t("profile.activeIntro")}
         />
         <ActiveOrdersList
           orders={active}
@@ -90,9 +97,9 @@ export default async function ProfilePage() {
           empty={
             <EmptyState
               icon="phone"
-              title="No active numbers"
-              description="Pick a service and a country to get a number. Incoming codes appear here instantly."
-              action={<ButtonLink href="/price">Get a number</ButtonLink>}
+              title={t("price.noActive")}
+              description={t("profile.noActiveHint")}
+              action={<ButtonLink href="/price">{t("purchase.title")}</ButtonLink>}
             />
           }
         />
@@ -101,12 +108,12 @@ export default async function ProfilePage() {
       <Card>
         <PageHeader
           as="h2"
-          title="Received numbers"
-          description="Your most recent activations."
+          title={t("nav.receivedNumbers")}
+          description={t("profile.recentIntro")}
           actions={
             recent.total > 0 && (
               <ButtonLink href="/profile/history" size="sm" variant="ghost">
-                All orders <Icon name="arrowRight" size={16} />
+                {t("market.allOrders")} <Icon name="arrowRight" size={16} />
               </ButtonLink>
             )
           }
@@ -114,9 +121,9 @@ export default async function ProfilePage() {
         {recent.items.length === 0 ? (
           <EmptyState
             icon="inbox"
-            title="No numbers yet"
-            description="Your received numbers and codes will be listed here."
-            action={<ButtonLink href="/price" variant="outline">Browse prices</ButtonLink>}
+            title={t("profile.noNumbers")}
+            description={t("profile.noNumbersHint")}
+            action={<ButtonLink href="/price" variant="outline">{t("profile.browsePrices")}</ButtonLink>}
           />
         ) : (
           <OrdersTable orders={recent.items} />
@@ -126,12 +133,12 @@ export default async function ProfilePage() {
       <Card>
         <PageHeader
           as="h2"
-          title="Wallet activity"
-          description="Your latest top-ups, purchases and refunds."
+          title={t("profile.walletActivity")}
+          description={t("profile.walletIntro")}
           actions={
             activity.total > 0 && (
               <ButtonLink href="/profile/history" size="sm" variant="ghost">
-                All transactions <Icon name="arrowRight" size={16} />
+                {t("profile.allTransactions")} <Icon name="arrowRight" size={16} />
               </ButtonLink>
             )
           }
@@ -139,9 +146,9 @@ export default async function ProfilePage() {
         {activity.items.length === 0 ? (
           <EmptyState
             icon="wallet"
-            title="No wallet activity yet"
-            description="Add funds to your balance to start buying numbers."
-            action={<ButtonLink href="/profile/top-up">Add funds</ButtonLink>}
+            title={t("profile.noWallet")}
+            description={t("profile.noWalletHint")}
+            action={<ButtonLink href="/profile/top-up">{t("nav.addFunds")}</ButtonLink>}
           />
         ) : (
           <TransactionsTable transactions={activity.items} />

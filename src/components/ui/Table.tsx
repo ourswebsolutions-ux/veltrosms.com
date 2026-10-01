@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
     <div className="-mx-1 overflow-x-auto px-1">
-      <table className={cn("w-full border-collapse text-left text-[15px]", className)} {...props} />
+      <table className={cn("w-full border-collapse text-start text-[15px]", className)} {...props} />
     </div>
   );
 }
@@ -75,5 +75,5 @@ export function Th({
 }
 
 export function Td({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("py-2 pr-3 align-middle", className)} {...props} />;
+  return <td className={cn("py-2 pe-3 align-middle", className)} {...props} />;
 }

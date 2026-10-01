@@ -3,12 +3,13 @@ import type { ReactNode } from "react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Card } from "@/components/ui/Card";
 import { PageContainer } from "@/components/ui/PageContainer";
+import { getT } from "@/i18n/server";
 
 /**
  * Centered stack of cards shared by every auth page (log in, sign up,
  * verification, password reset), following the reference's authorization page.
  */
-export function AuthShell({
+export async function AuthShell({
   title,
   description,
   notice,
@@ -22,9 +23,10 @@ export function AuthShell({
   children: ReactNode;
   switchLink?: { prompt: string; label: string; href: string };
 }) {
+  const t = await getT();
   return (
     <PageContainer size="form" className="space-y-5 pt-4">
-      <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: title }]} className="flex justify-center" />
+      <Breadcrumbs items={[{ label: t("common.home"), href: "/" }, { label: title }]} className="flex justify-center" />
       <div className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">{title}</h1>
         {description && <p className="mx-auto mt-2 max-w-md text-[15px] text-fg-muted">{description}</p>}

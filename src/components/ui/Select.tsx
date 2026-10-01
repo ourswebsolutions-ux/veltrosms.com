@@ -14,7 +14,7 @@ export function Select({
   return (
     <div className={cn("relative", className)}>
       <select
-        className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface-muted pr-10 pl-4 text-[15px] text-fg outline-none focus:border-primary"
+        className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface-muted pe-10 ps-4 text-[15px] text-fg outline-none focus:border-primary"
         {...props}
       >
         {placeholder && (
@@ -30,7 +30,7 @@ export function Select({
       </select>
       <Icon
         name="chevronDown"
-        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-primary"
+        className="pointer-events-none absolute top-1/2 end-3 -translate-y-1/2 text-primary"
       />
     </div>
   );

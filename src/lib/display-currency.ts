@@ -1,5 +1,5 @@
-import { formatPrice } from "./format";
-import { MONEY_SCALE } from "./money";
+import { formatPrice, ltr } from "./format";
+import { formatMoney, MONEY_SCALE } from "./money";
 
 /**
  * Website-wide DISPLAY currency. Every amount is stored and charged in the
@@ -50,11 +50,11 @@ export function formatConverted(minorUnits: number, rate: DisplayRate, opts: { s
   const digits = value !== 0 && value < 10 ? 2 : 0;
   const number = new Intl.NumberFormat(info.locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
   const sign = minorUnits < 0 ? "−" : opts.signed ? "+" : "";
-  return `${sign}${info.symbol}${number}`;
+  return ltr(`${sign}${info.symbol}${number}`);
 }
 
 /** The original (charged) amount, e.g. "$2.00" or "+$2.00". */
 export function formatOriginal(minorUnits: number, currency: string, opts: { signed?: boolean } = {}): string {
   if (!opts.signed) return formatPrice(minorUnits, currency);
-  return `${minorUnits >= 0 ? "+" : "−"}${formatPrice(Math.abs(minorUnits), currency)}`;
+  return ltr(`${minorUnits >= 0 ? "+" : "−"}${formatMoney(Math.abs(minorUnits), currency)}`);
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { db, type Prisma } from "@/server/db";
+import { siteConfig } from "@/config/site";
 import { env } from "@/server/env";
 
 /**
@@ -37,7 +38,7 @@ type Value<K extends Key> = z.infer<(typeof SCHEMAS)[K]>;
 const DEFAULTS: { [K in Key]: () => Value<K> } = {
   maintenance: () => ({ enabled: false, message: "" }),
   // The business's receiving account (public payment details, not secrets). Admins can change them.
-  manual_payment: () => ({ accountName: "Muhammad Usman", accountNumber: "03246623395", whatsapp: "03246623395", note: "" }),
+  manual_payment: () => ({ accountName: "Muhammad Usman", accountNumber: "03246623395", whatsapp: siteConfig.supportWhatsApp, note: "" }),
   pricing: () => ({ markupPercent: String(env().PRICE_MARKUP_PERCENT), minMargin: String(env().PRICE_MIN_MARGIN) }),
 };
 
@@ -72,7 +73,7 @@ export function clearSettingsCache() {
 
 /**
  * WhatsApp number in international digits for a wa.me link. Pakistani local
- * mobile numbers are converted: "0324 6623395" / "+92 324 6623395" → "923246623395".
+ * mobile numbers are converted: "0302 4966223" / "+92 302 4966223" → "923024966223".
  */
 export function whatsappDigits(value: string | null): string | null {
   let digits = value?.replace(/\D/g, "") ?? "";

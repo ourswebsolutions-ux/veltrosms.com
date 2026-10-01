@@ -10,13 +10,17 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
-import { formatPrice, formatShortDateTime } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import { whatsappHref } from "@/lib/whatsapp";
 import { requireUser } from "@/server/auth/session";
 import { getAccountProfile, listTransactions } from "@/server/services/account.service";
 import { getTopUpOptions, listOpenTopUps, listTopUps } from "@/server/services/payment.service";
+import { getT } from "@/i18n/server";
+import { DateTime } from "@/components/ui/DateTime";
 
-export const metadata: Metadata = { title: "Add funds" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("nav.addFunds") };
+}
 
 export default async function TopUpPage() {
   const user = await requireUser("/profile/top-up");
@@ -28,18 +32,19 @@ export default async function TopUpPage() {
     getTopUpOptions(),
   ]);
   const manual = options.flow === "manual" ? options.manual : null;
-  const wa = manual ? whatsappHref(manual, { email: profile.email }) : null;
+  const t = await getT();
+  const wa = manual ? whatsappHref(manual, { email: profile.email }, t) : null;
 
   return (
     <>
       <Card>
         <PageHeader
-          title="Add funds"
-          description={manual ? "Enter the amount you want to add. Payments are verified manually." : "Top up your balance to buy numbers."}
+          title={t("nav.addFunds")}
+          description={manual ? t("topup.introManual") : t("topup.intro")}
           actions={
             <span className="flex flex-wrap items-center gap-2">
               <span className="rounded-lg border border-line bg-surface-muted px-3 py-1.5 text-sm text-fg-muted">
-                Balance{" "}
+                {t("common.balance")}{" "}
               <b className="text-base text-fg tabular-nums">
                 <Money amount={profile.balance} currency={profile.currency} variant="both" />
               </b>
@@ -51,38 +56,41 @@ export default async function TopUpPage() {
         {!options.available ? (
           <EmptyState
             icon="wallet"
-            title="Adding funds isn't available right now"
-            description="Please check back soon. Your existing balance can be used for numbers as usual."
-            action={<ButtonLink href="/price" variant="outline">Browse numbers</ButtonLink>}
+            title={t("topup.unavailable")}
+            description={t("topup.unavailableHint")}
+            action={<ButtonLink href="/price" variant="outline">{t("topup.browseNumbers")}</ButtonLink>}
           />
         ) : manual ? (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
             <section aria-labelledby="manual-payment" className="space-y-4">
               <div>
                 <h2 id="manual-payment" className="text-[15px] font-semibold">
-                  1. Send the payment · Manual Easypaisa / JazzCash
+                  {t("topup.step1")}
                 </h2>
-                <p className="mt-1 text-sm text-fg-muted">Send the amount manually to this account from Easypaisa or JazzCash.</p>
+                <p className="mt-1 text-sm text-fg-muted">{t("topup.step1Hint")}</p>
               </div>
               <PaymentAccount details={manual} />
               <ul className="space-y-1.5 text-sm text-fg-muted">
                 <li className="flex gap-2">
-                  <Icon name="check" size={16} className="mt-0.5 shrink-0 text-primary" /> Keep the transaction ID (TID) from your receipt.
+                  <Icon name="check" size={16} className="mt-0.5 shrink-0 text-primary" /> {t("topup.keepTid")}
                 </li>
                 <li className="flex gap-2">
-                  <Icon name="check" size={16} className="mt-0.5 shrink-0 text-primary" /> Submit the request with the same amount you sent.
+                  <Icon name="check" size={16} className="mt-0.5 shrink-0 text-primary" /> {t("topup.sameAmount")}
                 </li>
                 <li className="flex gap-2">
-                  <Icon name="check" size={16} className="mt-0.5 shrink-0 text-primary" /> Your balance is added after an administrator verifies the payment.
+                  <Icon name="check" size={16} className="mt-0.5 shrink-0 text-primary" /> {t("topup.addedAfter")}
                 </li>
               </ul>
               {wa && (
                 <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
                   <span className="min-w-0 flex-1 text-sm">
-                    Need help? WhatsApp <b className="whitespace-nowrap">{manual.whatsapp}</b>
+                    {t("topup.needHelp")}{" "}
+                    <b className="whitespace-nowrap" dir="ltr">
+                      {manual.whatsapp}
+                    </b>
                   </span>
                   <ButtonLink href={wa} target="_blank" rel="noopener noreferrer" size="sm" className="!bg-[#25d366] hover:!bg-[#1ebe5a]">
-                    <Icon name="message" size={16} /> Contact on WhatsApp
+                    <Icon name="message" size={16} /> {t("wa.contact")}
                   </ButtonLink>
                 </div>
               )}
@@ -90,7 +98,7 @@ export default async function TopUpPage() {
             </section>
             <section aria-labelledby="manual-request">
               <h2 id="manual-request" className="mb-3 text-[15px] font-semibold">
-                2. Submit your top-up request
+                {t("topup.step2")}
               </h2>
               <ManualTopUpForm options={options} balance={profile.balance} />
             </section>
@@ -102,7 +110,7 @@ export default async function TopUpPage() {
 
       {open.length > 0 && (
         <Card>
-          <PageHeader as="h2" title={manual ? "Requests awaiting verification" : "Unfinished payments"} />
+          <PageHeader as="h2" title={manual ? t("topup.awaiting") : t("topup.unfinished")} />
           <ul className="space-y-2">
             {open.map((p) => (
               <li key={p.id} className="rounded-xl border border-primary-tint-border p-3 sm:flex sm:items-center sm:gap-3">
@@ -111,20 +119,22 @@ export default async function TopUpPage() {
                     {formatPrice(p.amount, p.currency)} <span className="font-normal text-fg-muted">· {p.methodLabel}</span>
                   </p>
                   <p className="text-[13px] text-fg-muted">
-                    <span className="font-mono whitespace-nowrap">{p.transactionId ? `TID ${p.transactionId}` : p.reference}</span> ·{" "}
-                    <span className="whitespace-nowrap">{formatShortDateTime(p.createdAt)}</span>
+                    <bdi className="font-mono whitespace-nowrap">{p.transactionId ? `TID ${p.transactionId}` : p.reference}</bdi> ·{" "}
+                    <span className="whitespace-nowrap">
+                      <DateTime iso={p.createdAt} short />
+                    </span>
                   </p>
                 </div>
                 <div className="mt-2 flex items-center gap-2 sm:mt-0">
                   <PaymentStatusBadge status={p.status} manual={p.manual} />
-                  <span className="ml-auto flex gap-2 sm:ml-0">
+                  <span className="ms-auto flex gap-2 sm:ms-0">
                     {p.checkoutUrl && (
                       <ButtonLink href={p.checkoutUrl} size="sm">
-                        Pay
+                        {t("topup.pay")}
                       </ButtonLink>
                     )}
                     <ButtonLink href={`/profile/top-up/${p.id}`} size="sm" variant="outline">
-                      Details
+                      {t("common.details")}
                     </ButtonLink>
                   </span>
                 </div>
@@ -137,17 +147,17 @@ export default async function TopUpPage() {
       <Card>
         <PageHeader
           as="h2"
-          title="Top-up history"
+          title={t("topup.history")}
           actions={
             recent.total > 0 && (
               <ButtonLink href="/profile/history?tab=payments" size="sm" variant="ghost">
-                All top-ups <Icon name="arrowRight" size={16} />
+                {t("topup.allTopups")} <Icon name="arrowRight" size={16} />
               </ButtonLink>
             )
           }
         />
         {recent.items.length === 0 ? (
-          <EmptyState compact icon="wallet" title="No top-ups yet" description="Your top-up requests and their status appear here." />
+          <EmptyState compact icon="wallet" title={t("topup.noTopups")} description={t("topup.noTopupsHint")} />
         ) : (
           <PaymentsTable payments={recent.items} />
         )}
@@ -156,17 +166,17 @@ export default async function TopUpPage() {
       <Card>
         <PageHeader
           as="h2"
-          title="Recent wallet activity"
+          title={t("topup.recentActivity")}
           actions={
             activity.total > 0 && (
               <ButtonLink href="/profile/history" size="sm" variant="ghost">
-                Balance history <Icon name="arrowRight" size={16} />
+                {t("nav.balanceHistory")} <Icon name="arrowRight" size={16} />
               </ButtonLink>
             )
           }
         />
         {activity.items.length === 0 ? (
-          <EmptyState compact icon="history" title="No activity yet" description="Top-ups, purchases and refunds appear here." />
+          <EmptyState compact icon="history" title={t("stats.noActivity")} description={t("topup.noActivityHint")} />
         ) : (
           <TransactionsTable transactions={activity.items} />
         )}

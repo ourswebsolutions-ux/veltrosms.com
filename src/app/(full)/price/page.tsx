@@ -19,11 +19,12 @@ import {
   listCountries,
   listServices,
 } from "@/server/services/catalog.service";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Prices",
-  description: "Virtual number prices for receiving SMS, by service and country.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("price.metaTitle"), description: t("price.metaDescription") };
+}
 
 /** Provider code shown first (Telegram); falls back to the first service on sale. */
 const PREFERRED_SERVICE = "tg";
@@ -49,6 +50,7 @@ export default async function PricePage({ searchParams }: PageProps<"/price">) {
     services[0]?.slug ??
     "";
   const country = countryMatch?.id ?? countries[0]?.id ?? "";
+  const t = await getT();
   const initialResult =
     mode === "service" ? await getOffersForService(service) : await getOffersForCountry(country);
 
@@ -56,22 +58,22 @@ export default async function PricePage({ searchParams }: PageProps<"/price">) {
     <PageContainer size="form" className="max-w-[900px] space-y-4">
       <Card className="sm:!p-8">
         <PageHeader
-          title="Virtual number prices for receiving SMS"
-          description="Choose a service or a country to see available numbers and prices."
+          title={t("price.title")}
+          description={t("price.intro")}
           actions={
             viewer.signedIn ? (
-              <div className="flex items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pr-1 pl-3">
-                <span className="text-sm text-fg-muted">Balance</span>
+              <div className="flex items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pe-1 ps-3">
+                <span className="text-sm text-fg-muted">{t("common.balance")}</span>
                 <span className="font-semibold tabular-nums">
                   <Money amount={viewer.balance} currency={viewer.currency} variant="both" />
                 </span>
                 <ButtonLink href="/profile/top-up" size="sm" variant="soft">
-                  <Icon name="plus" size={16} /> Top up
+                  <Icon name="plus" size={16} /> {t("nav.topUp")}
                 </ButtonLink>
               </div>
             ) : (
               <ButtonLink href="/login" size="sm" variant="outline">
-                Log in to buy
+                {t("price.loginToBuy")}
               </ButtonLink>
             )
           }
@@ -91,11 +93,11 @@ export default async function PricePage({ searchParams }: PageProps<"/price">) {
         <Card id="active" className="sm:!p-8">
           <PageHeader
             as="h2"
-            title="Your active numbers"
-            description="Numbers waiting for or holding an SMS code."
+            title={t("market.yourActive")}
+            description={t("price.activeIntro")}
             actions={
               <ButtonLink href="/profile/history" size="sm" variant="ghost">
-                Order history <Icon name="arrowRight" size={16} />
+                {t("price.orderHistory")} <Icon name="arrowRight" size={16} />
               </ButtonLink>
             }
           />
@@ -106,8 +108,8 @@ export default async function PricePage({ searchParams }: PageProps<"/price">) {
               <EmptyState
                 compact
                 icon="phone"
-                title="No active numbers"
-                description="Numbers you get appear here while they wait for an SMS."
+                title={t("price.noActive")}
+                description={t("price.noActiveHint")}
               />
             }
           />

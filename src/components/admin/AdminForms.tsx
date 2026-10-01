@@ -196,7 +196,7 @@ export function DeleteUserButton({ action, userId, email, balance }: { action: A
           formRef.current?.requestSubmit();
         }}
       >
-        <ul className="list-disc space-y-1 pl-5 text-sm">
+        <ul className="list-disc space-y-1 ps-5 text-sm">
           <li>The user can never log in again and their name and email are erased.</li>
           <li>If the account has orders, payments or ledger entries, those records are kept (anonymized) for accounting.</li>
           <li>Refused while the balance isn&apos;t zero (currently {balance}), a top-up is pending, or a number is live.</li>
@@ -423,7 +423,7 @@ export function ManualPaymentForm({
           {(p) => <Input {...p} name="accountNumber" inputMode="tel" defaultValue={accountNumber} maxLength={20} />}
         </Field>
       </div>
-      <Field label="WhatsApp help number" hint="e.g. 03246623395 or +92 324 6623395. Leave empty to hide WhatsApp help.">
+      <Field label="WhatsApp help number" hint="e.g. +923024966223 or 0302 4966223. Leave empty to hide WhatsApp help.">
         {(p) => <Input {...p} name="whatsapp" inputMode="tel" defaultValue={whatsapp ?? ""} maxLength={20} />}
       </Field>
       <Field label="Note for customers" hint="Optional, e.g. working hours.">
@@ -543,13 +543,13 @@ export function ReadyMadeOfferForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <span className="text-sm text-fg">
-            Service<span className="ml-0.5 text-primary">*</span>
+            Service<span className="ms-0.5 text-primary">*</span>
           </span>
           <Combobox label="Service" options={serviceOptions} value={serviceId} onChange={setServiceId} placeholder="Choose a service" searchPlaceholder="Search services" />
         </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm text-fg">
-            Country<span className="ml-0.5 text-primary">*</span>
+            Country<span className="ms-0.5 text-primary">*</span>
           </span>
           <Combobox label="Country" options={countryOptions} value={countryId} onChange={setCountryId} searchPlaceholder="Search countries" />
         </div>
@@ -635,13 +635,13 @@ export function CustomMarginDialog({
           <input type="hidden" name="countryId" value={countryId} />
           <div className="flex flex-col gap-1.5">
             <span className="text-sm text-fg">
-              Service<span className="ml-0.5 text-primary">*</span>
+              Service<span className="ms-0.5 text-primary">*</span>
             </span>
             <Combobox label="Service" options={serviceOptions} value={serviceId} onChange={setServiceId} placeholder="Choose a service" searchPlaceholder="Search services" />
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-sm text-fg">
-              Country<span className="ml-0.5 text-primary">*</span>
+              Country<span className="ms-0.5 text-primary">*</span>
             </span>
             <Combobox label="Country" options={countryOptions} value={countryId} onChange={setCountryId} placeholder="Choose a country" searchPlaceholder="Search countries" />
           </div>

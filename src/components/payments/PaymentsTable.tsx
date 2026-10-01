@@ -1,22 +1,25 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { formatDateTime, formatPrice, formatShortDateTime } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import type { PaymentListItem } from "@/types/account";
 import { PaymentStatusBadge } from "./PaymentStatus";
+import { getT } from "@/i18n/server";
+import { DateTime } from "@/components/ui/DateTime";
 
 /** Top-up payments as a table on ≥ md and as stacked rows on phones. */
-export function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
+export async function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
+  const t = await getT();
   return (
     <>
       <Table className="hidden md:table">
         <THead>
           <tr>
-            <Th>Payment</Th>
-            <Th>Method</Th>
-            <Th>Status</Th>
-            <Th className="text-right">Fee</Th>
-            <Th className="text-right">Credited</Th>
+            <Th>{t("pay.payment")}</Th>
+            <Th>{t("pay.method")}</Th>
+            <Th>{t("common.status")}</Th>
+            <Th className="text-end">{t("pay.fee")}</Th>
+            <Th className="text-end">{t("pay.credited")}</Th>
           </tr>
         </THead>
         <TBody>
@@ -26,24 +29,30 @@ export function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
                 <Link href={`/profile/top-up/${p.id}`} className="font-mono font-medium text-primary hover:underline">
                   {p.reference}
                 </Link>
-                <span className="block text-xs text-fg-muted">{formatShortDateTime(p.createdAt)}</span>
+                <span className="block text-xs text-fg-muted">
+                  <DateTime iso={p.createdAt} short />
+                </span>
               </Td>
               <Td className="text-sm">
                 {p.methodLabel}
-                {p.transactionId && <span className="block font-mono text-xs text-fg-muted">TID {p.transactionId}</span>}
+                {p.transactionId && <bdi className="block font-mono text-xs text-fg-muted">TID {p.transactionId}</bdi>}
                 {p.test && (
-                  <Badge tone="neutral" className="ml-1.5">
-                    Test
+                  <Badge tone="neutral" className="ms-1.5">
+                    {t("pay.test")}
                   </Badge>
                 )}
               </Td>
               <Td>
                 <PaymentStatusBadge status={p.status} manual={p.manual} />
-                {p.manual && p.reviewedAt && <span className="mt-0.5 block text-xs text-fg-subtle">Reviewed {formatShortDateTime(p.reviewedAt)}</span>}
+                {p.manual && p.reviewedAt && (
+                  <span className="mt-0.5 block text-xs text-fg-subtle">
+                    {t("pay.reviewed")} <DateTime iso={p.reviewedAt} short />
+                  </span>
+                )}
                 {p.rejectionReason && <span className="block max-w-56 text-xs text-danger">{p.rejectionReason}</span>}
               </Td>
-              <Td className="text-right text-sm text-fg-muted tabular-nums">{formatPrice(p.fee, p.currency)}</Td>
-              <Td className="pr-0 text-right font-medium tabular-nums">{formatPrice(p.amount, p.currency)}</Td>
+              <Td className="text-end text-sm text-fg-muted tabular-nums">{formatPrice(p.fee, p.currency)}</Td>
+              <Td className="pe-0 text-end font-medium tabular-nums">{formatPrice(p.amount, p.currency)}</Td>
             </Tr>
           ))}
         </TBody>
@@ -61,14 +70,28 @@ export function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
                 <PaymentStatusBadge status={p.status} manual={p.manual} />
                 <span>
                   {p.methodLabel}
-                  {p.transactionId ? ` · TID ${p.transactionId}` : ` · fee ${formatPrice(p.fee, p.currency)}`}
+                  {p.transactionId ? (
+                    <>
+                      {" · "}
+                      <bdi>TID {p.transactionId}</bdi>
+                    </>
+                  ) : (
+                    ` · ${t("pay.feeLower")} ${formatPrice(p.fee, p.currency)}`
+                  )}
                 </span>
               </div>
               <p className="mt-1.5 text-[13px] text-fg-muted">
-                Submitted {formatDateTime(p.createdAt)}
-                {p.manual && p.reviewedAt ? ` · reviewed ${formatDateTime(p.reviewedAt)}` : ""}
+                {t("pay.submitted")} <DateTime iso={p.createdAt} />
+                {p.manual && p.reviewedAt ? (
+                  <>
+                    {" · "}
+                    {t("pay.reviewedLower")} <DateTime iso={p.reviewedAt} />
+                  </>
+                ) : null}
               </p>
-              {p.rejectionReason && <p className="mt-1 text-[13px] text-danger">Reason: {p.rejectionReason}</p>}
+              {p.rejectionReason && <p className="mt-1 text-[13px] text-danger">
+                  {t("pay.reason")} <bdi>{p.rejectionReason}</bdi>
+                </p>}
             </Link>
           </li>
         ))}

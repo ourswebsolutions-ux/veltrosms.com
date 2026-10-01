@@ -1,7 +1,8 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdminActor } from "@/server/admin/guard";
 import { createReadyMadeOffer } from "@/server/admin/ready-made";
-import { formatConverted } from "@/lib/display-currency";
+import { formatConverted as formatConvertedIsolated } from "@/lib/display-currency";
+import { ltr, stripBidi } from "@/lib/format";
 import { db } from "@/server/db";
 import { resetEnvCache } from "@/server/env";
 import { getDisplayRates, resetExchangeRateCache } from "@/server/services/exchange-rates";
@@ -81,7 +82,11 @@ describe("Display currencies (USD / PKR / INR / BDT) — display only", () => {
   const live = (rates: Record<string, number>) => ({ result: "success", base_code: "USD", time_last_update_unix: 1_790_000_000, rates: { USD: 1, ...rates } });
   const rate = (currency: "PKR" | "INR" | "BDT", r: number) => ({ currency, rate: r, source: "live" as const, updatedAt: null });
 
+  // Amounts are wrapped in bidi isolates (correct in RTL text); compare the visible text.
+  const formatConverted = (...args: Parameters<typeof formatConvertedIsolated>) => stripBidi(formatConvertedIsolated(...args));
+
   it("formats each currency with its symbol and sensible decimals", () => {
+    expect(formatConvertedIsolated(USD(2), rate("PKR", 276.984))).toBe(ltr("Rs 554"));
     expect(formatConverted(USD(2), rate("PKR", 276.984))).toBe("Rs 554");
     expect(formatConverted(USD(2), rate("INR", 84.1))).toBe("₹168");
     expect(formatConverted(USD(2), rate("BDT", 121.9))).toBe("৳244");

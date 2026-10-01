@@ -82,7 +82,7 @@ export default async function AdminWalletsPage({ searchParams }: PageProps<"/adm
               ),
             },
             { header: "Status", cell: (w) => <UserStatusBadge status={w.user.status} /> },
-            { header: "Balance", className: "text-right font-semibold tabular-nums", cell: (w) => formatPrice(w.balance, w.currency) },
+            { header: "Balance", className: "text-end font-semibold tabular-nums", cell: (w) => formatPrice(w.balance, w.currency) },
             { header: "Last change", className: "whitespace-nowrap text-fg-muted", cell: (w) => formatShortDateTime(w.updatedAt) },
             {
               header: "Actions",

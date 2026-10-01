@@ -28,13 +28,13 @@ export function HeroBanner({
         className,
       )}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] md:block">
-        <span className={cn("absolute top-[12%] right-[18%] size-52 rounded-full", solid ? "bg-white/15" : "bg-primary/15")} />
-        <span className={cn("absolute -top-10 right-[48%] size-24 rounded-full", solid ? "bg-white/10" : "bg-primary/10")} />
-        <span className={cn("absolute right-[6%] -bottom-12 size-32 rounded-full", solid ? "bg-white/10" : "bg-primary/10")} />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 end-0 hidden w-[42%] md:block">
+        <span className={cn("absolute top-[12%] end-[18%] size-52 rounded-full", solid ? "bg-white/15" : "bg-primary/15")} />
+        <span className={cn("absolute -top-10 end-[48%] size-24 rounded-full", solid ? "bg-white/10" : "bg-primary/10")} />
+        <span className={cn("absolute end-[6%] -bottom-12 size-32 rounded-full", solid ? "bg-white/10" : "bg-primary/10")} />
         <span
           className={cn(
-            "absolute top-1/2 right-[26%] flex size-32 -translate-y-1/2 rotate-6 items-center justify-center rounded-[32px] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+            "absolute top-1/2 end-[26%] flex size-32 -translate-y-1/2 rotate-6 items-center justify-center rounded-[32px] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
             solid ? "bg-white text-primary" : "bg-primary text-white",
           )}
         >

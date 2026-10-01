@@ -38,7 +38,7 @@ export function ApiReference({ sections }: { sections: ApiSection[] }) {
                   onClick={() => setMethodId(m.id)}
                   aria-current={active}
                   className={cn(
-                    "flex min-h-13 w-full items-center gap-3 rounded-lg border px-5 py-3 text-left text-[17px] transition-colors",
+                    "flex min-h-13 w-full items-center gap-3 rounded-lg border px-5 py-3 text-start text-[17px] transition-colors",
                     active
                       ? "border-primary bg-primary-tint text-primary"
                       : "border-transparent bg-surface-muted text-fg-muted hover:text-fg",
@@ -78,7 +78,7 @@ function MethodDetail({ method }: { method: ApiMethod }) {
         <Badge tone={method.auth ? "soft" : "neutral"}>{method.auth ? "API key" : "Public"}</Badge>
       </div>
 
-      <div className="mt-4 flex items-stretch gap-2 rounded-lg bg-primary-tint p-3 pl-4">
+      <div className="mt-4 flex items-stretch gap-2 rounded-lg bg-primary-tint p-3 ps-4">
         <code className="flex-1 self-center font-mono text-[15px] break-all text-primary">
           <span className="font-bold">{method.method}</span> {method.path}
         </code>

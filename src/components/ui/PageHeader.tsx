@@ -4,7 +4,7 @@ import { Breadcrumbs } from "./Breadcrumbs";
 
 /**
  * Page/section heading: optional breadcrumbs, title (+ inline badge),
- * description and right-aligned actions that wrap below on narrow screens.
+ * description and end-aligned actions that wrap below on narrow screens.
  */
 export function PageHeader({
   title,

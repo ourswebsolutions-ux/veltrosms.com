@@ -1,17 +1,28 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/config/site";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Legal information" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("nav.legal") };
+}
 
-export default function LegalInfoPage() {
+export default async function LegalInfoPage() {
+  const t = await getT();
   return (
     <LegalPage
-      title="Legal information"
+      title={t("nav.legal")}
       sections={[
-        { heading: "Operator", body: siteConfig.legalEntity },
-        { heading: "Contact", body: <a className="text-primary hover:underline" href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a> },
-        { heading: "Complaints", body: "How to file a complaint and expected response times." },
+        { heading: t("legal.operator"), body: t("site.legalEntity") },
+        {
+          heading: t("legal.contact"),
+          body: (
+            <a className="text-primary hover:underline" href={`mailto:${siteConfig.supportEmail}`}>
+              {siteConfig.supportEmail}
+            </a>
+          ),
+        },
+        { heading: t("legal.complaints"), body: t("legal.complaintsBody") },
       ]}
     />
   );

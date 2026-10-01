@@ -27,7 +27,7 @@ export function AccordionItem({
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 text-base text-fg sm:px-5 sm:text-[17px]">
         <span>{title}</span>
         <span className="relative size-5 shrink-0 text-primary" aria-hidden="true">
-          <span className="absolute top-1/2 left-0 h-0.5 w-5 -translate-y-1/2 rounded bg-current" />
+          <span className="absolute top-1/2 start-0 h-0.5 w-5 -translate-y-1/2 rounded bg-current" />
           <span className="absolute top-0 left-1/2 h-5 w-0.5 -translate-x-1/2 rounded bg-current transition-transform group-open:scale-y-0" />
         </span>
       </summary>

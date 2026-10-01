@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/forms/AuthForms";
 import { AuthShell } from "@/components/layout/AuthShell";
 import { Alert } from "@/components/ui/Alert";
+import { getT } from "@/i18n/server";
 import { safeNextPath } from "@/lib/validation/auth";
 import { getCurrentUser } from "@/server/auth/session";
 
-export const metadata: Metadata = { title: "Log in", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("nav.login"), robots: { index: false } };
+}
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
@@ -15,27 +18,24 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   // Signed-in users don't need the login screen.
   if (await getCurrentUser()) redirect(next ?? "/profile");
+  const t = await getT();
 
   const notice = one(sp.verified) ? (
-    <Alert tone="success" title="Email confirmed">
-      Your account is active. Log in to continue.
+    <Alert tone="success" title={t("auth.emailConfirmed")}>
+      {t("auth.emailConfirmedBody")}
     </Alert>
   ) : one(sp.emailChanged) ? (
-    <Alert tone="success" title="Email changed">
-      Log in with your new email address. All devices were logged out.
+    <Alert tone="success" title={t("auth.emailChanged")}>
+      {t("auth.emailChangedBody")}
     </Alert>
   ) : one(sp.signedOut) ? (
-    <Alert>You have been logged out.</Alert>
+    <Alert>{t("auth.signedOut")}</Alert>
   ) : next ? (
-    <Alert>Please log in to continue.</Alert>
+    <Alert>{t("srv.auth.loginToContinue")}</Alert>
   ) : null;
 
   return (
-    <AuthShell
-      title="Log in"
-      notice={notice}
-      switchLink={{ prompt: "New here?", label: "Create an account", href: "/register" }}
-    >
+    <AuthShell title={t("nav.login")} notice={notice} switchLink={{ prompt: t("auth.newHere"), label: t("auth.createAccount"), href: "/register" }}>
       <LoginForm next={next} />
     </AuthShell>
   );

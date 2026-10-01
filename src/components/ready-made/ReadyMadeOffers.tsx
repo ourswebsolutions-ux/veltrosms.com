@@ -14,6 +14,7 @@ import { formatPrice } from "@/lib/format";
 import { purchaseReadyMadeAction } from "@/server/actions/ready-made";
 import type { Viewer } from "@/types/account";
 import type { ReadyMadeOfferView, ReadyMadePurchaseResult } from "@/types/ready-made";
+import { useT } from "@/i18n/client";
 
 /** Random key identifying one purchase attempt (idempotency). */
 function newKey(): string {
@@ -26,16 +27,17 @@ function newKey(): string {
 export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView[]; viewer: Viewer }) {
   const [selected, setSelected] = useState<ReadyMadeOfferView | null>(null);
   const { convert } = useDisplayCurrency();
+  const t = useT();
 
   if (offers.length === 0) {
     return (
       <EmptyState
         icon="box"
-        title="No Ready Made accounts available right now"
-        description="Please check back later, or get a virtual number for your service instead."
+        title={t("rm.emptyTitle")}
+        description={t("rm.emptyBody")}
         action={
           <ButtonLink href="/price" variant="outline">
-            Browse virtual numbers
+            {t("rm.browseNumbers")}
           </ButtonLink>
         }
       />
@@ -50,17 +52,19 @@ export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView
             <div className="flex items-center gap-3">
               <ServiceAvatar name={o.service.name} color={o.service.color} logo={o.service.logo} size={40} />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[17px] font-semibold">{o.service.name}</p>
+                <p dir="auto" className="truncate text-[17px] font-semibold rtl:text-right">
+                  {o.service.name}
+                </p>
                 <p className="flex items-center gap-1.5 text-[13px] text-fg-muted">
                   {o.country ? (
                     <>
                       <CountryFlag iso2={o.country.iso2} size={16} />
-                      {o.country.name}
+                      <bdi>{o.country.name}</bdi>
                     </>
                   ) : (
                     <>
                       <Icon name="globe" size={15} />
-                      All countries
+                      {t("common.allCountries")}
                     </>
                   )}
                 </p>
@@ -69,13 +73,21 @@ export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView
                 <PricePill>
                   <Money amount={o.price} currency={o.currency} />
                 </PricePill>
-                {convert(o.price, o.currency) && <span className="text-xs text-fg-muted tabular-nums">Charged: {formatPrice(o.price, o.currency)}</span>}
+                {convert(o.price, o.currency) && (
+                  <span className="text-xs text-fg-muted tabular-nums">
+                    {t("rm.charged", {
+                      price: formatPrice(o.price, o.currency),
+                    })}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-fg-muted">{o.currency} · Ready Made account</span>
+              <span className="text-xs text-fg-muted">
+                <bdi>{o.currency}</bdi> · {t("rm.type")}
+              </span>
               <Button size="sm" onClick={() => setSelected(o)}>
-                Purchase
+                {t("rm.purchase")}
               </Button>
             </div>
           </li>
@@ -91,16 +103,9 @@ export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView
  * balance and charges atomically; on success the customer is taken to the
  * order page with the WhatsApp delivery instructions.
  */
-function ReadyMadePurchaseDialog({
-  offer,
-  viewer,
-  onClose,
-}: {
-  offer: ReadyMadeOfferView | null;
-  viewer: Viewer;
-  onClose: () => void;
-}) {
+function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeOfferView | null; viewer: Viewer; onClose: () => void }) {
   const router = useRouter();
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ReadyMadePurchaseResult | null>(null);
   const [price, setPrice] = useState<number | null>(null);
@@ -131,10 +136,14 @@ function ReadyMadePurchaseDialog({
     startTransition(async () => {
       let r: ReadyMadePurchaseResult;
       try {
-        r = await purchaseReadyMadeAction({ offerId: offer.id, price: agreedPrice, idempotencyKey: key });
+        r = await purchaseReadyMadeAction({
+          offerId: offer.id,
+          price: agreedPrice,
+          idempotencyKey: key,
+        });
       } catch {
         // Unknown whether the server got it: keep the key so a retry returns the same order.
-        setResult({ ok: false, code: "ERROR", message: "We couldn't confirm the purchase. Check your connection and press Confirm purchase again — you won't be charged twice." });
+        setResult({ ok: false, code: "ERROR", message: t("rm.lostResponse") });
         return;
       }
       if (r.ok) {
@@ -155,23 +164,29 @@ function ReadyMadePurchaseDialog({
     <Modal
       open={offer !== null}
       onClose={close}
-      title="Confirm Ready Made purchase"
+      title={t("rm.confirmTitle")}
       footer={
         viewer.signedIn ? (
           <>
             <Button variant="muted" onClick={close} disabled={busy}>
-              Cancel
+              {t("common.cancel")}
             </Button>
-            <Button onClick={confirm} loading={busy} disabled={busy || insufficient || changed !== undefined || (result !== null && !result.ok && result.code === "UNAVAILABLE")}>
-              {`Confirm purchase · ${formatPrice(agreedPrice, currency)}`}
+            <Button
+              onClick={confirm}
+              loading={busy}
+              disabled={busy || insufficient || changed !== undefined || (result !== null && !result.ok && result.code === "UNAVAILABLE")}
+            >
+              {t("rm.confirmFor", {
+                price: formatPrice(agreedPrice, currency),
+              })}
             </Button>
           </>
         ) : (
           <>
             <ButtonLink href="/login?next=%2Faccounts" variant="outline">
-              Log in
+              {t("nav.login")}
             </ButtonLink>
-            <ButtonLink href="/register">Create account</ButtonLink>
+            <ButtonLink href="/register">{t("rm.createAccount")}</ButtonLink>
           </>
         )
       }
@@ -179,34 +194,34 @@ function ReadyMadePurchaseDialog({
       {offer && (
         <div className="space-y-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-[15px]">
-            <dt className="text-fg-muted">Service</dt>
+            <dt className="text-fg-muted">{t("common.service")}</dt>
             <dd className="flex items-center gap-2 font-medium">
               <ServiceAvatar name={offer.service.name} color={offer.service.color} logo={offer.service.logo} size={22} />
-              {offer.service.name}
+              <bdi>{offer.service.name}</bdi>
             </dd>
-            <dt className="text-fg-muted">Country</dt>
+            <dt className="text-fg-muted">{t("common.country")}</dt>
             <dd className="flex items-center gap-2 font-medium">
               {offer.country ? (
                 <>
                   <CountryFlag iso2={offer.country.iso2} />
-                  {offer.country.name}
+                  <bdi>{offer.country.name}</bdi>
                 </>
               ) : (
-                "All countries"
+                t("common.allCountries")
               )}
             </dd>
-            <dt className="text-fg-muted">Purchase type</dt>
-            <dd className="font-medium">Ready Made account</dd>
+            <dt className="text-fg-muted">{t("rm.purchaseType")}</dt>
+            <dd className="font-medium">{t("rm.type")}</dd>
             <ChargeRows amount={agreedPrice} currency={currency} />
             {viewer.signedIn && (
               <>
-                <dt className="text-fg-muted">Your balance</dt>
+                <dt className="text-fg-muted">{t("purchase.yourBalance")}</dt>
                 <dd className={insufficient ? "font-semibold text-danger tabular-nums" : "font-medium tabular-nums"}>
                   <Money amount={viewer.balance} currency={viewer.currency} variant="both" />
                 </dd>
                 {!insufficient && (
                   <>
-                    <dt className="text-fg-muted">After purchase</dt>
+                    <dt className="text-fg-muted">{t("purchase.after")}</dt>
                     <dd className="font-medium tabular-nums">
                       <Money amount={viewer.balance - agreedPrice} currency={viewer.currency} variant="both" />
                     </dd>
@@ -217,23 +232,26 @@ function ReadyMadePurchaseDialog({
           </dl>
 
           {!viewer.signedIn ? (
-            <Alert>Log in or create an account to buy a Ready Made account.</Alert>
+            <Alert>{t("rm.guest")}</Alert>
           ) : insufficient ? (
             <Alert
               tone="warning"
-              title="Not enough balance"
+              title={t("purchase.noFunds")}
               action={
                 <ButtonLink href="/profile/top-up" size="sm" variant="outline">
-                  Add funds
+                  {t("nav.addFunds")}
                 </ButtonLink>
               }
             >
-              This costs {formatPrice(agreedPrice, currency)}; you need {formatPrice(agreedPrice - balance, currency)} more. Top up your balance to buy it.
+              {t("rm.noFundsBody", {
+                price: formatPrice(agreedPrice, currency),
+                missing: formatPrice(agreedPrice - balance, currency),
+              })}
             </Alert>
           ) : changed !== undefined ? (
             <Alert
               tone="warning"
-              title="The price has changed"
+              title={t("purchase.priceChanged")}
               action={
                 <Button
                   size="sm"
@@ -243,23 +261,23 @@ function ReadyMadePurchaseDialog({
                     setResult(null);
                   }}
                 >
-                  {`Use ${formatPrice(changed, currency)}`}
+                  {t("purchase.usePrice", {
+                    price: formatPrice(changed, currency),
+                  })}
                 </Button>
               }
             >
-              Confirm the new price to continue. You have not been charged.
+              {t("rm.confirmNewPrice")}
             </Alert>
           ) : result && !result.ok ? (
-            <Alert tone={result.code === "INSUFFICIENT_FUNDS" || result.code === "UNAVAILABLE" ? "warning" : "error"}>{result.message}</Alert>
+            <Alert tone={result.code === "INSUFFICIENT_FUNDS" || result.code === "UNAVAILABLE" ? "warning" : "error"}>
+              {t.server(result.message)}
+            </Alert>
           ) : (
-            <p className="text-[13px] text-fg-muted">
-              The price is charged from your balance now. This is a manual delivery: after the purchase, contact us on WhatsApp with your order
-              reference to receive your number/account. No code is sent to this page automatically.
-            </p>
+            <p className="text-[13px] text-fg-muted">{t("rm.manualHint")}</p>
           )}
         </div>
       )}
     </Modal>
   );
 }
-

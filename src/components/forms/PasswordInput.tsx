@@ -5,6 +5,9 @@ import { Icon } from "@/components/icons";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 import { passwordStrength } from "@/lib/validation/auth";
+import { useT } from "@/i18n/client";
+
+const STRENGTH = ["forms.strengthWeak", "forms.strengthFair", "forms.strengthGood", "forms.strengthStrong"] as const;
 
 /** Password field with a show/hide toggle; optional strength meter. */
 export function PasswordInput({
@@ -17,6 +20,7 @@ export function PasswordInput({
   const [value, setValue] = useState("");
   const strength = passwordStrength(value);
   const ref = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   // React resets forms after a submission; keep the meter in sync.
   useEffect(() => {
@@ -34,7 +38,7 @@ export function PasswordInput({
           {...props}
           ref={ref}
           type={visible ? "text" : "password"}
-          className={cn("pr-12", className)}
+          className={cn("pe-12", className)}
           onChange={(e) => {
             setValue(e.target.value);
             onChange?.(e);
@@ -45,9 +49,9 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Hide password" : "Show password"}
+          aria-label={visible ? t("forms.hidePassword") : t("forms.showPassword")}
           aria-pressed={visible}
-          className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-fg-muted hover:bg-surface-sunken hover:text-fg"
+          className="absolute top-1/2 end-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-fg-muted hover:bg-surface-sunken hover:text-fg"
         >
           <Icon name={visible ? "eyeOff" : "eye"} size={18} />
         </button>
@@ -71,8 +75,8 @@ export function PasswordInput({
               />
             ))}
           </div>
-          <span className="w-16 text-right text-xs text-fg-muted">
-            {["", "Weak", "Fair", "Good", "Strong"][strength]}
+          <span className="w-16 text-end text-xs text-fg-muted">
+            {strength > 0 && t(STRENGTH[strength - 1])}
           </span>
         </div>
       )}

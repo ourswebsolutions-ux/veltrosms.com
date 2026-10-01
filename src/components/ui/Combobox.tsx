@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/client";
 
 export type ComboboxOption = { value: string; label: string; icon?: ReactNode };
 
@@ -15,8 +16,8 @@ export function Combobox({
   value,
   onChange,
   label,
-  placeholder = "Select",
-  searchPlaceholder = "Search",
+  placeholder,
+  searchPlaceholder,
   className,
 }: {
   options: ComboboxOption[];
@@ -33,6 +34,7 @@ export function Combobox({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = useId();
+  const t = useT();
 
   const selected = options.find((o) => o.value === value);
   const filtered = useMemo(() => {
@@ -84,11 +86,11 @@ export function Combobox({
         aria-expanded={open}
         aria-label={label}
         onClick={() => (open ? setOpen(false) : openList())}
-        className="flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-surface-muted pr-3 pl-2 text-left text-[15px] text-fg outline-none focus-visible:border-primary"
+        className="flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-surface-muted pe-3 ps-2 text-start text-[15px] text-fg outline-none focus-visible:border-primary"
       >
         {selected?.icon}
         <span className={cn("flex-1 truncate", !selected && "text-fg-subtle")}>
-          {selected?.label ?? placeholder}
+          {selected?.label ?? placeholder ?? t("common.select")}
         </span>
         <Icon name="chevronDown" className={cn("text-primary transition-transform", open && "rotate-180")} />
       </button>
@@ -103,14 +105,14 @@ export function Combobox({
               setCursor(0);
             }}
             onKeyDown={onKeyDown}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t("common.search")}
+            aria-label={searchPlaceholder ?? t("common.search")}
             aria-controls={listId}
             aria-activedescendant={filtered[cursor] ? `${listId}-${filtered[cursor].value}` : undefined}
             className="mb-1 h-9 w-full rounded-md bg-surface-muted px-3 text-sm outline-none placeholder:text-fg-subtle"
           />
           <ul id={listId} role="listbox" aria-label={label} className="max-h-64 overflow-y-auto scroll-thin">
-            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-fg-muted">No results</li>}
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-fg-muted">{t("common.noResults")}</li>}
             {filtered.map((o, i) => (
               <li
                 key={o.value}

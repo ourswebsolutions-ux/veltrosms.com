@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { CountryFlag } from "@/components/ui/CatalogVisuals";
 import { Combobox } from "@/components/ui/Combobox";
 import type { CountrySummary } from "@/types/catalog";
+import { useT } from "@/i18n/client";
 
 /** Searchable country picker with flags. */
 export function CountrySelector({
@@ -17,6 +18,7 @@ export function CountrySelector({
   onChange: (id: string) => void;
   className?: string;
 }) {
+  const t = useT();
   const options = useMemo(
     () =>
       countries.map((c) => ({
@@ -28,11 +30,11 @@ export function CountrySelector({
   );
   return (
     <Combobox
-      label="Country"
+      label={t("common.country")}
       options={options}
       value={value}
       onChange={onChange}
-      searchPlaceholder="Search countries"
+      searchPlaceholder={t("market.searchCountries")}
       className={className}
     />
   );

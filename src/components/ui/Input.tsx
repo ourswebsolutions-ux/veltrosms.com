@@ -2,6 +2,7 @@ import type { ComponentProps, InputHTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { ServerText } from "./ServerText";
 
 const control =
   "w-full rounded-lg border border-line bg-surface-muted px-4 text-[15px] text-fg placeholder:text-fg-subtle transition-colors outline-none focus:border-primary focus:bg-surface disabled:opacity-60 aria-invalid:border-danger";
@@ -24,7 +25,7 @@ export function SearchInput({
     <div className={cn("relative", className)}>
       <span
         className={cn(
-          "pointer-events-none absolute top-1/2 left-1.5 flex -translate-y-1/2 items-center justify-center rounded-md bg-primary text-white",
+          "pointer-events-none absolute top-1/2 start-1.5 flex -translate-y-1/2 items-center justify-center rounded-md bg-primary text-white",
           size === "sm" ? "size-7" : "size-8",
         )}
       >
@@ -32,7 +33,7 @@ export function SearchInput({
       </span>
       <input
         type="search"
-        className={cn(control, size === "sm" ? "h-10 pl-11 text-sm" : "h-11 pl-12")}
+        className={cn(control, size === "sm" ? "h-10 ps-11 text-sm" : "h-11 ps-12")}
         {...props}
       />
     </div>
@@ -61,12 +62,12 @@ export function Field({
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label htmlFor={id} className="text-sm text-fg">
         {label}
-        {required && <span className="ml-0.5 text-primary">*</span>}
+        {required && <span className="ms-0.5 text-primary">*</span>}
       </label>
       {children({ id, "aria-invalid": error ? true : undefined, "aria-describedby": describedBy })}
       {error ? (
         <p id={`${id}-error`} className="text-xs text-danger">
-          {error}
+          <ServerText text={error} />
         </p>
       ) : hint ? (
         <p id={`${id}-hint`} className="text-xs text-fg-muted">

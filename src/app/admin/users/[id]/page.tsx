@@ -187,8 +187,8 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
               { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (t) => formatShortDateTime(t.createdAt) },
               { header: "Type", cell: (t) => TRANSACTION_LABEL[t.type] },
               { header: "Details", desktopOnly: true, cell: (t) => <span className="text-fg-muted">{t.description ?? "—"}</span> },
-              { header: "Amount", className: "text-right tabular-nums", cell: (t) => <span className={cn(t.amount >= 0 && "text-success")}>{t.amount >= 0 ? "+" : "−"}{money(Math.abs(t.amount))}</span> },
-              { header: "Balance", className: "text-right tabular-nums text-fg-muted", cell: (t) => money(t.balanceAfter) },
+              { header: "Amount", className: "text-end tabular-nums", cell: (t) => <span className={cn(t.amount >= 0 && "text-success")}>{t.amount >= 0 ? "+" : "−"}{money(Math.abs(t.amount))}</span> },
+              { header: "Balance", className: "text-end tabular-nums text-fg-muted", cell: (t) => money(t.balanceAfter) },
             ]}
           />
         </div>
@@ -213,7 +213,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
             { header: "Order", cell: (o) => <Link href={`/admin/orders/${o.id}`} className="font-mono text-primary hover:underline">#{o.id.slice(0, 8)}</Link> },
             { header: "Service", cell: (o) => `${o.service.name} · ${o.country.name}` },
             { header: "Status", cell: (o) => <OrderStatus status={o.status} /> },
-            { header: "Amount", className: "text-right tabular-nums", cell: (o) => formatPrice(o.price, o.currency) },
+            { header: "Amount", className: "text-end tabular-nums", cell: (o) => formatPrice(o.price, o.currency) },
             { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (o) => formatShortDateTime(o.createdAt) },
           ]}
         />
@@ -238,7 +238,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
             { header: "Payment", cell: (p) => <Link href={p.provider === "manual" ? `/admin/topups/${p.id}` : `/admin/payments/${p.id}`} className="font-mono text-primary hover:underline">{p.reference}</Link> },
             { header: "Status", cell: (p) => <PaymentStatusBadge status={p.status} manual={p.provider === "manual"} /> },
             { header: "Reference", className: "font-mono text-xs", cell: (p) => p.providerPaymentId ?? "—" },
-            { header: "Amount", className: "text-right tabular-nums", cell: (p) => formatPrice(p.amount, p.currency) },
+            { header: "Amount", className: "text-end tabular-nums", cell: (p) => formatPrice(p.amount, p.currency) },
             { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (p) => formatShortDateTime(p.createdAt) },
           ]}
         />

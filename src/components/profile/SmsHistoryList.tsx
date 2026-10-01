@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
-import { formatDateTime, formatPhone } from "@/lib/format";
+import { formatPhone } from "@/lib/format";
 import type { SmsHistoryItem } from "@/types/account";
+import { DateTime } from "@/components/ui/DateTime";
 
 /** Received SMS across the user's activations, each linked to its order. */
 export function SmsHistoryList({ messages }: { messages: SmsHistoryItem[] }) {
@@ -20,12 +21,14 @@ export function SmsHistoryList({ messages }: { messages: SmsHistoryItem[] }) {
                 {m.phoneNumber && <span className="font-mono">· {formatPhone(m.phoneNumber)}</span>}
               </p>
             </div>
-            {m.code && <span className="rounded-md bg-success-tint px-2 py-0.5 font-mono text-[15px] font-bold text-success">{m.code}</span>}
+            {m.code && <span className="rounded-md bg-success-tint px-2 py-0.5 font-mono text-[15px] font-bold text-success"><bdi>{m.code}</bdi></span>}
           </div>
-          <p className="mt-2 text-[15px] break-words">{m.text}</p>
+          <p dir="auto" className="mt-2 text-[15px] break-words">
+            {m.text}
+          </p>
           <p className="mt-1 text-xs text-fg-subtle">
             {m.sender ? `${m.sender} · ` : ""}
-            {formatDateTime(m.receivedAt)}
+            <DateTime iso={m.receivedAt} />
           </p>
         </li>
       ))}

@@ -49,7 +49,7 @@ export function AdminTable<T>({ rows, columns, rowKey, empty }: { rows: T[]; col
                 .map((c) => (
                   <div key={c.header} className="contents">
                     <dt className="text-fg-muted">{c.header}</dt>
-                    <dd className="min-w-0 text-right break-words">{c.cell(r)}</dd>
+                    <dd className="min-w-0 text-end break-words">{c.cell(r)}</dd>
                   </div>
                 ))}
             </dl>

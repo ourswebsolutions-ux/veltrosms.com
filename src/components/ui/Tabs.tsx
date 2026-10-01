@@ -29,7 +29,9 @@ export function SegmentedTabs<T extends string>({
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
   function onKeyDown(e: KeyboardEvent, index: number) {
-    const delta = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    // Arrow keys follow the visual order, which is mirrored in right-to-left languages.
+    const rtl = document.documentElement.dir === "rtl";
+    const delta = e.key === "ArrowRight" ? (rtl ? -1 : 1) : e.key === "ArrowLeft" ? (rtl ? 1 : -1) : 0;
     if (!delta) return;
     const next = (index + delta + items.length) % items.length;
     onChange(items[next].value);

@@ -56,14 +56,14 @@ export default async function AdminServicesPage({ searchParams }: PageProps<"/ad
               <Link href={`/admin/services/${s.id}`} className="inline-flex items-center gap-2 font-medium hover:text-primary">
                 <ServiceAvatar name={s.name} color={serviceColor(s.providerCode, s.name)} logo={serviceLogo(s.providerCode)} size={22} />
                 {s.name}
-                {s.isPopular && <Badge tone="warning" className="ml-1.5">Featured</Badge>}
+                {s.isPopular && <Badge tone="warning" className="ms-1.5">Featured</Badge>}
               </Link>
             ),
           },
           { header: "Code", className: "font-mono text-xs", cell: (s) => s.providerCode },
           { header: "Provider", cell: (s) => (s.providerActive ? <Badge tone="success">Listed</Badge> : <Badge tone="neutral">Not listed</Badge>) },
-          { header: "Countries in stock", className: "text-right tabular-nums", cell: (s) => s.countriesInStock },
-          { header: "From", className: "text-right tabular-nums", cell: (s) => (s.minPrice !== null ? formatPrice(s.minPrice) : "—") },
+          { header: "Countries in stock", className: "text-end tabular-nums", cell: (s) => s.countriesInStock },
+          { header: "From", className: "text-end tabular-nums", cell: (s) => (s.minPrice !== null ? formatPrice(s.minPrice) : "—") },
           {
             header: "Local",
             cell: (s) => (

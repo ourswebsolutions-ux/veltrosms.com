@@ -76,9 +76,9 @@ export default async function AdminProvidersPage({ searchParams }: PageProps<"/a
           empty={<EmptyState compact icon="cpu" title="No provider requests in the last 24 hours" />}
           columns={[
             { header: "Action", className: "font-mono text-xs", cell: (a) => a.action },
-            { header: "OK", className: "text-right tabular-nums", cell: (a) => a.ok },
-            { header: "Failed", className: "text-right tabular-nums", cell: (a) => (a.failed ? <Badge tone="danger">{a.failed}</Badge> : "0") },
-            { header: "Avg time", className: "text-right tabular-nums", cell: (a) => `${a.avgMs} ms` },
+            { header: "OK", className: "text-end tabular-nums", cell: (a) => a.ok },
+            { header: "Failed", className: "text-end tabular-nums", cell: (a) => (a.failed ? <Badge tone="danger">{a.failed}</Badge> : "0") },
+            { header: "Avg time", className: "text-end tabular-nums", cell: (a) => `${a.avgMs} ms` },
           ]}
         />
       </Card>

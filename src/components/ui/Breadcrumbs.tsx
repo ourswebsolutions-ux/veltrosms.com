@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Fragment } from "react";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/client";
 
 export function Breadcrumbs({
   items,
@@ -9,8 +12,9 @@ export function Breadcrumbs({
   items: { label: string; href?: string }[];
   className?: string;
 }) {
+  const t = useT();
   return (
-    <nav aria-label="Breadcrumb" className={cn("text-[13px]", className)}>
+    <nav aria-label={t("common.breadcrumb")} className={cn("text-[13px]", className)}>
       <ol className="flex flex-wrap items-center gap-2">
         {items.map((item, i) => (
           <Fragment key={item.label}>

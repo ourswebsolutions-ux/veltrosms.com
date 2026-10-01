@@ -7,17 +7,19 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { isNavGroup, mainNav } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { isActivePath } from "@/lib/nav";
+import { useT } from "@/i18n/client";
 
 /** Desktop text navigation in the white header bar. */
 export function Navbar() {
   const pathname = usePathname();
+  const t = useT();
   return (
-    <nav aria-label="Main" className="hidden items-center gap-0.5 lg:flex xl:gap-2">
+    <nav aria-label={t("nav.main")} className="hidden items-center gap-0.5 lg:flex xl:gap-2">
       {mainNav.map((item) =>
         isNavGroup(item) ? (
           <Dropdown
-            key={item.label}
-            label={`${item.label} menu`}
+            key={t(item.label)}
+            label={t(item.label)}
             panelClassName="w-72"
             trigger={({ open }) => (
               <span
@@ -26,7 +28,7 @@ export function Navbar() {
                   item.items.some((i) => isActivePath(pathname, i.href)) && "text-primary",
                 )}
               >
-                {item.label}
+                {t(item.label)}
                 <Icon
                   name="caretDown"
                   size={16}
@@ -42,7 +44,7 @@ export function Navbar() {
                 data-close
                 className="block rounded-lg px-3 py-2.5 outline-none hover:bg-surface-muted focus-visible:bg-surface-muted"
               >
-                <span className="block text-sm font-semibold text-fg">{sub.label}</span>
+                <span className="block text-sm font-semibold text-fg">{t(sub.label)}</span>
                 {sub.description && (
                   <span className="block text-[13px] text-fg-muted">{sub.description}</span>
                 )}
@@ -59,7 +61,7 @@ export function Navbar() {
               isActivePath(pathname, item.href) && "text-primary",
             )}
           >
-            {item.label}
+            {t(item.label)}
           </Link>
         ),
       )}

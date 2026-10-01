@@ -21,6 +21,8 @@ import {
   signOutOtherSessionsAction,
   updateProfileAction,
 } from "@/server/actions/settings";
+import { useT } from "@/i18n/client";
+import { DateTime } from "@/components/ui/DateTime";
 
 /** Two-column settings row: description on the left, form on the right. */
 export function SettingsSection({
@@ -61,13 +63,14 @@ const validate = (schema: typeof profileSchema | typeof changePasswordSchema | t
 export function ProfileForm({ name }: { name: string }) {
   const [state, action] = useFormAction(updateProfileAction, validate(profileSchema));
   const e = state.fieldErrors ?? {};
+  const t = useT();
   return (
     <form action={action} noValidate className="space-y-4">
-      <Field label="Name" required error={e.name}>
+      <Field label={t("common.name")} required error={e.name}>
         {(p) => <Input {...p} name="name" autoComplete="name" defaultValue={state.values?.name ?? name} required maxLength={100} />}
       </Field>
       <FormMessage state={state} />
-      <SubmitButton>Save changes</SubmitButton>
+      <SubmitButton>{t("settings.saveChanges")}</SubmitButton>
     </form>
   );
 }
@@ -78,33 +81,38 @@ export function EmailForm({ email, pending }: { email: string; pending: string |
   const [cancelState, cancel] = useFormAction(cancelEmailChangeAction);
   const e = state.fieldErrors ?? {};
   const waiting = cancelState.status === "success" ? null : pending;
+  const t = useT();
   return (
     <div className="space-y-4">
-      <Field label="Current email">{(p) => <Input {...p} type="email" value={email} readOnly className="text-fg-muted" />}</Field>
+      <Field label={t("settings.currentEmail")}>{(p) => <Input {...p} type="email" value={email} readOnly className="text-fg-muted" />}</Field>
       {waiting && state.status !== "success" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary-tint-border bg-primary-tint px-3 py-2.5 text-sm">
           <Icon name="mail" size={18} className="text-primary" />
           <span className="min-w-0 flex-1">
-            Waiting for confirmation of <b className="break-all">{waiting}</b>. Check that inbox for the link.
+            {t("settings.waitingFor")}{" "}
+            <b className="break-all">
+              <bdi>{waiting}</bdi>
+            </b>
+            . {t("settings.checkInbox")}
           </span>
           <form action={cancel}>
             <button type="submit" className="font-medium text-primary hover:underline">
-              Cancel
+              {t("common.cancel")}
             </button>
           </form>
         </div>
       )}
       <form action={action} noValidate className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="New email" required error={e.email}>
+          <Field label={t("settings.newEmail")} required error={e.email}>
             {(p) => <Input {...p} name="email" type="email" autoComplete="email" defaultValue={state.values?.email} required />}
           </Field>
-          <Field label="Current password" required error={e.password}>
+          <Field label={t("settings.currentPassword")} required error={e.password}>
             {(p) => <PasswordInput {...p} name="password" autoComplete="current-password" required />}
           </Field>
         </div>
         <FormMessage state={state.status === "idle" && cancelState.status !== "idle" ? cancelState : state} />
-        <SubmitButton>Change email</SubmitButton>
+        <SubmitButton>{t("settings.changeEmail")}</SubmitButton>
       </form>
     </div>
   );
@@ -113,21 +121,22 @@ export function EmailForm({ email, pending }: { email: string; pending: string |
 export function PasswordForm() {
   const [state, action] = useFormAction(changePasswordAction, validate(changePasswordSchema));
   const e = state.fieldErrors ?? {};
+  const t = useT();
   return (
     <form action={action} noValidate className="space-y-4">
-      <Field label="Current password" required error={e.current}>
+      <Field label={t("settings.currentPassword")} required error={e.current}>
         {(p) => <PasswordInput {...p} name="current" autoComplete="current-password" required />}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="New password" required error={e.next} hint="10+ characters, letters and numbers.">
+        <Field label={t("auth.newPassword")} required error={e.next} hint={t("settings.passwordHint")}>
           {(p) => <PasswordInput {...p} name="next" autoComplete="new-password" required showStrength />}
         </Field>
-        <Field label="Repeat new password" required error={e.confirm}>
+        <Field label={t("auth.repeatNewPassword")} required error={e.confirm}>
           {(p) => <PasswordInput {...p} name="confirm" autoComplete="new-password" required />}
         </Field>
       </div>
       <FormMessage state={state} />
-      <SubmitButton>Change password</SubmitButton>
+      <SubmitButton>{t("settings.changePassword")}</SubmitButton>
     </form>
   );
 }
@@ -138,10 +147,11 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
   const [state, action] = useFormAction(signOutOtherSessionsAction);
   const [revokeState, revoke] = useFormAction(revokeSessionAction);
   const others = sessions.filter((s) => !s.current).length;
+  const t = useT();
   return (
     <div className="space-y-3">
       <div className="rounded-xl border border-line p-4">
-        <p className="font-medium">Active sessions</p>
+        <p className="font-medium">{t("settings.activeSessions")}</p>
         <ul className="mt-2 divide-y divide-line">
           {sessions.map((s) => (
             <li key={s.id} className="flex items-center gap-3 py-2.5 text-sm">
@@ -149,16 +159,16 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate">{s.device}</p>
                 <p className="text-xs text-fg-muted">
-                  Last active {s.lastUsed} · signed in {s.signedIn}
+                  {t("settings.lastActive")} <DateTime iso={s.lastUsed} short /> · {t("settings.signedIn")} <DateTime iso={s.signedIn} short />
                 </p>
               </div>
               {s.current ? (
-                <Badge tone="success">This device</Badge>
+                <Badge tone="success">{t("settings.thisDevice")}</Badge>
               ) : (
                 <form action={revoke}>
                   <input type="hidden" name="sessionId" value={s.id} />
                   <button type="submit" className="text-[13px] font-medium text-danger hover:underline">
-                    Log out
+                    {t("nav.logout")}
                   </button>
                 </form>
               )}
@@ -169,7 +179,7 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
           <FormMessage state={revokeState.status !== "idle" && state.status === "idle" ? revokeState : state} />
           {others > 0 && (
             <SubmitButton size="sm" className="bg-surface !text-primary ring-1 ring-primary hover:!bg-primary-tint">
-              {`Log out ${others} other ${others === 1 ? "session" : "sessions"}`}
+              {others === 1 ? t("settings.logoutOne") : t("settings.logoutMany", { count: others })}
             </SubmitButton>
           )}
         </form>
@@ -182,33 +192,34 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
 export function PreferencesPanel() {
   const [theme, setTheme] = useTheme();
   const [sound, setSound] = usePref(SOUND_KEY);
+  const t = useT();
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-sm font-medium">Theme</p>
+        <p className="mb-2 text-sm font-medium">{t("settings.theme")}</p>
         <SegmentedTabs<Theme>
-          label="Theme"
+          label={t("settings.theme")}
           value={theme ?? "light"}
           onChange={setTheme}
           items={[
-            { value: "light", label: "Light" },
-            { value: "dark", label: "Dark" },
+            { value: "light", label: t("settings.light") },
+            { value: "dark", label: t("settings.dark") },
           ]}
         />
       </div>
       <div>
-        <p className="mb-2 text-sm font-medium">Sound when a code arrives</p>
+        <p className="mb-2 text-sm font-medium">{t("settings.sound")}</p>
         <SegmentedTabs<"on" | "off">
-          label="Sound when a code arrives"
+          label={t("settings.sound")}
           value={sound === "off" ? "off" : "on"}
           onChange={setSound}
           items={[
-            { value: "on", label: "On" },
-            { value: "off", label: "Off" },
+            { value: "on", label: t("settings.on") },
+            { value: "off", label: t("settings.off") },
           ]}
         />
       </div>
-      <p className="text-xs text-fg-muted">These settings are saved in this browser.</p>
+      <p className="text-xs text-fg-muted">{t("settings.savedHere")}</p>
     </div>
   );
 }
@@ -218,35 +229,38 @@ export function ApiKeyPanel({ hint }: { hint: string | null }) {
   const [revokeState, revoke] = useFormAction(revokeApiKeyAction);
   const fresh = state.status === "success" ? state.values?.apiKey : undefined;
   const current = revokeState.status === "success" ? null : fresh ? `${fresh.slice(0, 8)}…${fresh.slice(-4)}` : hint;
+  const t = useT();
 
   return (
     <div className="space-y-4">
       {fresh ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium">Your new API key</p>
-          <div className="flex items-center gap-2 rounded-lg border border-primary-tint-border bg-primary-tint py-1 pr-1 pl-3">
-            <code className="min-w-0 flex-1 font-mono text-sm break-all">{fresh}</code>
-            <CopyButton value={fresh} label="Copy API key" showLabel />
+          <p className="text-sm font-medium">{t("settings.newKey")}</p>
+          <div className="flex items-center gap-2 rounded-lg border border-primary-tint-border bg-primary-tint py-1 pe-1 ps-3">
+            <code dir="ltr" className="min-w-0 flex-1 font-mono text-sm break-all">
+              {fresh}
+            </code>
+            <CopyButton value={fresh} label={t("settings.copyKey")} showLabel />
           </div>
           <FormMessage state={state} />
         </div>
       ) : (
-        <Field label="Your API key" hint="The full key is shown only once, right after it's generated.">
-          {(p) => <Input {...p} readOnly value={current ?? "Not generated yet"} className="font-mono text-fg-muted" />}
+        <Field label={t("settings.yourKey")} hint={t("settings.keyHint")}>
+          {(p) => <Input {...p} readOnly value={current ?? t("settings.notGenerated")} className="font-mono text-fg-muted" />}
         </Field>
       )}
       {!fresh && <FormMessage state={state.status === "error" ? state : revokeState} />}
       <div className="flex flex-wrap gap-2">
         <form action={action}>
-          <SubmitButton>{current ? "Generate a new key" : "Generate API key"}</SubmitButton>
+          <SubmitButton>{current ? t("settings.generateNew") : t("settings.generate")}</SubmitButton>
         </form>
         {current && (
           <form action={revoke}>
-            <SubmitButton className="!bg-surface-muted !text-danger hover:!bg-danger-tint">Revoke key</SubmitButton>
+            <SubmitButton className="!bg-surface-muted !text-danger hover:!bg-danger-tint">{t("settings.revoke")}</SubmitButton>
           </form>
         )}
       </div>
-      {current && <p className="text-xs text-fg-muted">Generating a new key immediately disables the previous one.</p>}
+      {current && <p className="text-xs text-fg-muted">{t("settings.newKeyNote")}</p>}
     </div>
   );
 }

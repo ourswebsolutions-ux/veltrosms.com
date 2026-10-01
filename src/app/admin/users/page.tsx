@@ -75,7 +75,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
                 <span className="block truncate font-medium">
                   {u.name}
                   {u.role === "admin" && (
-                    <Badge tone="warning" className="ml-1.5">
+                    <Badge tone="warning" className="ms-1.5">
                       Admin
                     </Badge>
                   )}
@@ -85,9 +85,9 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
             ),
           },
           { header: "Status", cell: (u) => <UserStatusBadge status={u.status} /> },
-          { header: "Balance", className: "text-right tabular-nums", cell: (u) => formatPrice(u.balance, u.currency) },
-          { header: "Spent", className: "text-right tabular-nums", cell: (u) => formatPrice(u.spent, u.currency) },
-          { header: "Orders", className: "text-right tabular-nums", cell: (u) => u.orders.toLocaleString("en-US") },
+          { header: "Balance", className: "text-end tabular-nums", cell: (u) => formatPrice(u.balance, u.currency) },
+          { header: "Spent", className: "text-end tabular-nums", cell: (u) => formatPrice(u.spent, u.currency) },
+          { header: "Orders", className: "text-end tabular-nums", cell: (u) => u.orders.toLocaleString("en-US") },
           { header: "Last login", className: "whitespace-nowrap text-fg-muted", cell: (u) => (u.lastLoginAt ? formatShortDateTime(u.lastLoginAt) : "—") },
           { header: "Joined", className: "whitespace-nowrap text-fg-muted", desktopOnly: true, cell: (u) => formatShortDateTime(u.createdAt) },
         ]}

@@ -4,7 +4,7 @@
 
 - Provider: `ManualPaymentProvider` (`src/server/payments/manual/manual-provider.ts`), selected by `PAYMENT_PROVIDER=manual` (default).
 - Receiving account (shown on Add funds, editable in **Admin → Settings → Manual payments**):
-  **Muhammad Usman — 03246623395** (Easypaisa / JazzCash), WhatsApp help **03246623395**.
+  **Muhammad Usman — 03246623395** (Easypaisa / JazzCash), WhatsApp help **+923024966223**.
 - Flow:
   1. Customer sends money to that account and submits **amount + method + transaction ID** (+ optional note) at `/profile/top-up`.
   2. `createManualTopUp()` stores a `payments` row: `provider = "manual"`, `status = PENDING`, `provider_payment_id = <transaction ID>` (unique per provider → the same transaction ID can never be claimed twice). **Nothing is credited.** Audit: `topup.created`; optional email to `ADMIN_NOTIFY_EMAIL`.

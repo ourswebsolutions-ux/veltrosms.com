@@ -6,6 +6,8 @@ import { DateRangeFilter } from "@/components/profile/DateRangeFilter";
 import { OrdersTable } from "@/components/profile/OrdersTable";
 import { SmsHistoryList } from "@/components/profile/SmsHistoryList";
 import { TransactionsTable, TRANSACTION_LABEL } from "@/components/profile/TransactionsTable";
+import { TRANSACTION_TYPE } from "@/i18n/labels";
+import { getT } from "@/i18n/server";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -22,7 +24,9 @@ import { listOrders, listSmsHistory } from "@/server/services/order.service";
 import { listTopUps } from "@/server/services/payment.service";
 import type { OrderFilter, TransactionType } from "@/types/account";
 
-export const metadata: Metadata = { title: "History" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT())("history.title") };
+}
 
 const PAGE_SIZE = 15;
 const TX_TYPES = Object.keys(TRANSACTION_LABEL) as TransactionType[];
@@ -35,6 +39,7 @@ const one = (v: string | string[] | undefined) => (typeof v === "string" ? v.sli
 
 export default async function HistoryPage({ searchParams }: PageProps<"/profile/history">) {
   const user = await requireUser("/profile/history");
+  const t = await getT();
   const sp = await searchParams;
 
   const tab: Tab = TABS.find((t) => t === one(sp.tab)) ?? "transactions";
@@ -108,31 +113,31 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
   return (
     <Card>
       <PageHeader
-        title="History"
-        description="Your balance movements, orders, received SMS and payments."
+        title={t("history.title")}
+        description={t("history.intro")}
         actions={
           <span className="flex items-center gap-3">
             <span className="text-sm text-fg-muted">
-              Balance{" "}
+              {t("common.balance")}{" "}
               <b className="text-base text-fg tabular-nums">
                 <Money amount={profile.balance} currency={profile.currency} variant="both" />
               </b>
             </span>
             <ButtonLink href="/profile/top-up" size="sm" variant="soft">
-              Add funds
+              {t("nav.addFunds")}
             </ButtonLink>
           </span>
         }
       />
 
       <UnderlineTabs
-        label="History type"
+        label={t("history.type")}
         activeHref={clearHref}
         items={[
-          { href: "/profile/history", label: "Transactions" },
-          { href: "/profile/history?tab=orders", label: "Orders" },
-          { href: "/profile/history?tab=sms", label: "SMS" },
-          { href: "/profile/history?tab=payments", label: "Payments" },
+          { href: "/profile/history", label: t("history.transactions") },
+          { href: "/profile/history?tab=orders", label: t("order.orders") },
+          { href: "/profile/history?tab=sms", label: t("history.sms") },
+          { href: "/profile/history?tab=payments", label: t("history.payments") },
         ]}
         className="mb-4"
       />
@@ -140,13 +145,13 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
       <DateRangeFilter range={range} basePath="/profile/history" keep={keep} showCustom={false} className="mb-3" />
 
       {/* Plain GET form: filtering works without JavaScript and URLs are shareable. */}
-      <form method="get" action="/profile/history" className="mb-5 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4" aria-label="Filter history">
+      <form method="get" action="/profile/history" className="mb-5 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4" aria-label={t("history.filter")}>
         {tab !== "transactions" && <input type="hidden" name="tab" value={tab} />}
         {tab === "sms" ? (
           <>
             <label className="grid gap-1 text-xs text-fg-muted">
-              Search
-              <Input name="q" placeholder="Service, country or number" defaultValue={q ?? ""} className={field} />
+              {t("common.search")}
+              <Input name="q" placeholder={t("history.searchSms")} defaultValue={q ?? ""} className={field} />
             </label>
             <span className="hidden sm:block 2xl:hidden" />
             <span className="hidden 2xl:block" />
@@ -154,16 +159,16 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         ) : tab === "payments" ? (
           <>
             <label className="grid gap-1 text-xs text-fg-muted">
-              Status
+              {t("common.status")}
               <Select
                 name="status"
                 defaultValue={paymentStatus}
                 className="[&_select]:h-10 [&_select]:text-sm"
                 options={[
-                  { value: "all", label: "All statuses" },
-                  { value: "pending", label: "Awaiting payment" },
-                  { value: "paid", label: "Paid" },
-                  { value: "unpaid", label: "Failed / expired / cancelled" },
+                  { value: "all", label: t("history.allStatuses") },
+                  { value: "pending", label: t("pay.status.pending") },
+                  { value: "paid", label: t("pay.status.paid") },
+                  { value: "unpaid", label: t("history.unpaid") },
                 ]}
               />
             </label>
@@ -173,56 +178,56 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         ) : tab === "transactions" ? (
           <>
             <label className="grid gap-1 text-xs text-fg-muted">
-              Type
+              {t("common.type")}
               <Select
                 name="type"
                 defaultValue={type ?? ""}
                 className="[&_select]:h-10 [&_select]:text-sm"
-                options={[{ value: "", label: "All types" }, ...TX_TYPES.map((t) => ({ value: t, label: TRANSACTION_LABEL[t] }))]}
+                options={[{ value: "", label: t("history.allTypes") }, ...TX_TYPES.map((x) => ({ value: x, label: t(TRANSACTION_TYPE[x]) }))]}
               />
             </label>
             <label className="grid gap-1 text-xs text-fg-muted">
-              Status
+              {t("common.status")}
               <Select
                 name="status"
                 defaultValue={txStatus ?? ""}
                 className="[&_select]:h-10 [&_select]:text-sm"
                 options={[
-                  { value: "", label: "All statuses" },
-                  { value: "completed", label: "Completed" },
-                  { value: "pending", label: "Pending" },
-                  { value: "failed", label: "Failed" },
+                  { value: "", label: t("history.allStatuses") },
+                  { value: "completed", label: t("tx.completed") },
+                  { value: "pending", label: t("tx.pending") },
+                  { value: "failed", label: t("tx.failed") },
                 ]}
               />
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label className="grid gap-1 text-xs text-fg-muted">
-                Min amount
+                {t("history.minAmount")}
                 <Input name="min" inputMode="decimal" placeholder="0.00" defaultValue={minRaw} className={field} />
               </label>
               <label className="grid gap-1 text-xs text-fg-muted">
-                Max amount
-                <Input name="max" inputMode="decimal" placeholder="Any" defaultValue={maxRaw} className={field} />
+                {t("history.maxAmount")}
+                <Input name="max" inputMode="decimal" placeholder={t("price.any")} defaultValue={maxRaw} className={field} />
               </label>
             </div>
           </>
         ) : (
           <>
             <label className="grid gap-1 text-xs text-fg-muted">
-              Search
-              <Input name="q" placeholder="Service, country, number or order ID" defaultValue={q ?? ""} className={field} />
+              {t("common.search")}
+              <Input name="q" placeholder={t("history.searchOrders")} defaultValue={q ?? ""} className={field} />
             </label>
             <label className="grid gap-1 text-xs text-fg-muted">
-              Status
+              {t("common.status")}
               <Select
                 name="status"
                 defaultValue={orderStatus}
                 className="[&_select]:h-10 [&_select]:text-sm"
                 options={[
-                  { value: "all", label: "All statuses" },
-                  { value: "active", label: "Active" },
-                  { value: "completed", label: "Completed" },
-                  { value: "cancelled", label: "Cancelled / refunded" },
+                  { value: "all", label: t("history.allStatuses") },
+                  { value: "active", label: t("history.activeStatus") },
+                  { value: "completed", label: t("order.status.completed") },
+                  { value: "cancelled", label: t("history.cancelledRefunded") },
                 ]}
               />
             </label>
@@ -231,21 +236,21 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         )}
         <div className="grid grid-cols-2 gap-2">
           <label className="grid gap-1 text-xs text-fg-muted">
-            From
+            {t("history.from")}
             <Input type="date" name="from" defaultValue={range.fromStr ?? ""} className={field} />
           </label>
           <label className="grid gap-1 text-xs text-fg-muted">
-            To
+            {t("history.to")}
             <Input type="date" name="to" defaultValue={range.toStr ?? ""} className={field} />
           </label>
         </div>
         <div className="flex items-end gap-2 sm:col-span-2 2xl:col-span-4">
           <Button type="submit" size="sm" className="h-10">
-            Apply filters
+            {t("history.apply")}
           </Button>
           {filtered && (
             <Link href={clearHref} className="px-2 text-sm text-primary hover:underline">
-              Clear
+              {t("history.clear")}
             </Link>
           )}
         </div>
@@ -255,10 +260,10 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         (transactions.items.length === 0 ? (
           <EmptyState
             icon={filtered ? "search" : "history"}
-            title={filtered ? "No transactions match your filters" : "No transactions yet"}
-            description={filtered ? "Try other filters." : "Top-ups, purchases and refunds will be listed here."}
+            title={filtered ? t("history.noTxMatch") : t("history.noTx")}
+            description={filtered ? t("history.tryOther") : t("history.noTxHint")}
             action={
-              filtered ? <ButtonLink href={clearHref} variant="outline">Clear filters</ButtonLink> : <ButtonLink href="/profile/top-up">Add funds</ButtonLink>
+              filtered ? <ButtonLink href={clearHref} variant="outline">{t("price.clearFilters")}</ButtonLink> : <ButtonLink href="/profile/top-up">{t("nav.addFunds")}</ButtonLink>
             }
           />
         ) : (
@@ -272,10 +277,10 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         (payments.items.length === 0 ? (
           <EmptyState
             icon={filtered ? "search" : "wallet"}
-            title={filtered ? "No payments match your filters" : "No payments yet"}
-            description={filtered ? "Try other filters." : "Your top-up payments will be listed here."}
+            title={filtered ? t("history.noPayMatch") : t("history.noPay")}
+            description={filtered ? t("history.tryOther") : t("history.noPayHint")}
             action={
-              filtered ? <ButtonLink href={clearHref} variant="outline">Clear filters</ButtonLink> : <ButtonLink href="/profile/top-up">Add funds</ButtonLink>
+              filtered ? <ButtonLink href={clearHref} variant="outline">{t("price.clearFilters")}</ButtonLink> : <ButtonLink href="/profile/top-up">{t("nav.addFunds")}</ButtonLink>
             }
           />
         ) : (
@@ -289,10 +294,10 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         (sms.items.length === 0 ? (
           <EmptyState
             icon={filtered ? "search" : "message"}
-            title={filtered ? "No SMS match your filters" : "No SMS yet"}
-            description={filtered ? "Try other filters." : "Codes and messages you receive on your numbers will be listed here."}
+            title={filtered ? t("history.noSmsMatch") : t("history.noSms")}
+            description={filtered ? t("history.tryOther") : t("history.noSmsHint")}
             action={
-              filtered ? <ButtonLink href={clearHref} variant="outline">Clear filters</ButtonLink> : <ButtonLink href="/price">Get a number</ButtonLink>
+              filtered ? <ButtonLink href={clearHref} variant="outline">{t("price.clearFilters")}</ButtonLink> : <ButtonLink href="/price">{t("purchase.title")}</ButtonLink>
             }
           />
         ) : (
@@ -306,10 +311,10 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         (orders.items.length === 0 ? (
           <EmptyState
             icon={filtered ? "search" : "inbox"}
-            title={filtered ? "No orders match your filters" : "No orders yet"}
-            description={filtered ? "Try other filters." : "Numbers you order will be listed here."}
+            title={filtered ? t("history.noOrdersMatch") : t("history.noOrders")}
+            description={filtered ? t("history.tryOther") : t("history.noOrdersHint")}
             action={
-              filtered ? <ButtonLink href={clearHref} variant="outline">Clear filters</ButtonLink> : <ButtonLink href="/price">Get a number</ButtonLink>
+              filtered ? <ButtonLink href={clearHref} variant="outline">{t("price.clearFilters")}</ButtonLink> : <ButtonLink href="/price">{t("purchase.title")}</ButtonLink>
             }
           />
         ) : (

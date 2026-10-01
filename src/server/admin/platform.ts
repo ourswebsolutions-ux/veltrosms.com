@@ -624,7 +624,7 @@ export async function saveManualPayment(actor: AdminActor, input: ManualPaymentS
   const whatsapp = input.whatsapp?.trim() || null;
   if (accountName.length < 2 || accountName.length > 80) return { ok: false, message: "Enter the account holder's name." };
   if (!/^\+?[\d\s-]{7,20}$/.test(accountNumber)) return { ok: false, message: "Enter the Easypaisa / JazzCash number, e.g. 03246623395." };
-  if (whatsapp && !whatsappDigits(whatsapp)) return { ok: false, message: "Enter the WhatsApp number, e.g. 03246623395 or +92 324 6623395." };
+  if (whatsapp && !whatsappDigits(whatsapp)) return { ok: false, message: "Enter the WhatsApp number, e.g. +923024966223 or 0302 4966223." };
   const before = await getSetting("manual_payment");
   const saved = await saveSetting("manual_payment", { accountName, accountNumber, whatsapp, note: input.note.trim() });
   await audit(actor, "manual_payment.update", { type: "setting", id: "manual_payment" }, true, { before, after: saved }, `Manual payment details changed to ${saved.accountName} · ${saved.accountNumber}`);

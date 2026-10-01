@@ -76,7 +76,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             {o.messages.map((m) => (
               <li key={m.id} className="rounded-lg border border-line p-3">
                 <p className="text-xs text-fg-muted">
-                  {m.sender ?? "—"} · {formatDateTime(m.receivedAt)} {m.code && <b className="ml-1 font-mono text-success">{m.code}</b>}
+                  {m.sender ?? "—"} · {formatDateTime(m.receivedAt)} {m.code && <b className="ms-1 font-mono text-success">{m.code}</b>}
                 </p>
                 <p className="mt-1 break-words">{m.text}</p>
               </li>
@@ -93,7 +93,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           empty={<EmptyState compact icon="wallet" title="No ledger entries" />}
           columns={[
             { header: "Type", cell: (t) => TRANSACTION_LABEL[t.type] },
-            { header: "Amount", className: "text-right tabular-nums", cell: (t) => `${t.amount >= 0 ? "+" : "−"}${formatPrice(Math.abs(t.amount), o.currency)}` },
+            { header: "Amount", className: "text-end tabular-nums", cell: (t) => `${t.amount >= 0 ? "+" : "−"}${formatPrice(Math.abs(t.amount), o.currency)}` },
             { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (t) => formatShortDateTime(t.createdAt) },
           ]}
         />
@@ -109,7 +109,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             { header: "Action", className: "font-mono text-xs", cell: (r) => r.action },
             { header: "Result", cell: (r) => (r.success ? <Badge tone="success">OK</Badge> : <Badge tone="danger">{r.errorCategory ?? "Error"}</Badge>) },
             { header: "Code", className: "font-mono text-xs", cell: (r) => r.errorCode ?? (r.httpStatus ? `HTTP ${r.httpStatus}` : "—") },
-            { header: "Time", className: "text-right tabular-nums", cell: (r) => `${r.durationMs} ms` },
+            { header: "Time", className: "text-end tabular-nums", cell: (r) => `${r.durationMs} ms` },
             { header: "At", className: "whitespace-nowrap text-fg-muted", cell: (r) => formatShortDateTime(r.createdAt) },
           ]}
         />

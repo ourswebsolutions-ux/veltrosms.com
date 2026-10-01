@@ -1,3 +1,5 @@
+import type { MessageKey } from "@/i18n/translate";
+
 /**
  * Brand identity and navigation. Everything user-facing about the brand lives
  * here so a rename touches one file.
@@ -13,24 +15,31 @@ export const siteConfig = {
     "Virtual phone numbers for receiving SMS verification codes from popular services worldwide.",
   tagline: "Receive SMS verification codes online",
   supportEmail: "support@example.com",
+  /**
+   * Customer-support WhatsApp (international format). The single default for
+   * every WhatsApp contact on the site — top-up help and Ready Made delivery.
+   * Admins can override it in Admin → Settings.
+   */
+  supportWhatsApp: "+923024966223",
   /** Registered company details for the footer — placeholder until provided. */
   legalEntity: "Company name and registration details will appear here.",
 } as const;
 
 export type NavItem = {
-  label: string;
+  /** Dictionary key of the label (src/i18n/messages). */
+  label: MessageKey;
   href: string;
 };
 
 export type NavGroup = {
-  label: string;
+  label: MessageKey;
   items: (NavItem & { description?: string })[];
 };
 
 /** Top white header bar. */
 export const mainNav: (NavItem | NavGroup)[] = [
-  { label: "Price", href: "/price" },
-  { label: "Ready Made Accounts", href: "/accounts" },
+  { label: "nav.price", href: "/price" },
+  { label: "nav.readyMade", href: "/accounts" },
   // { label: "API", href: "/api" },
   // { label: "FAQ", href: "/faq" },
   // { label: "Earn with us", href: "/earn-with-us" },
@@ -53,16 +62,16 @@ export const mainNav: (NavItem | NavGroup)[] = [
 
 /** Orange account bar (desktop) / profile drop-down (mobile). */
 export const accountNav: NavItem[] = [
-  { label: "Received numbers", href: "/profile" },
-  { label: "Query statistics", href: "/profile/statistics" },
-  { label: "Balance history", href: "/profile/history" },
-  { label: "Top up", href: "/profile/top-up" },
-  { label: "Settings", href: "/profile/settings" },
+  { label: "nav.receivedNumbers", href: "/profile" },
+  { label: "nav.statistics", href: "/profile/statistics" },
+  { label: "nav.balanceHistory", href: "/profile/history" },
+  { label: "nav.topUp", href: "/profile/top-up" },
+  { label: "nav.settings", href: "/profile/settings" },
 ];
 
 /** Footer: primary product links (one row on desktop, like the reference). */
 export const footerNav: NavItem[] = [
-  { label: "Price", href: "/price" },
+  { label: "nav.price", href: "/price" },
   // { label: "API", href: "/api" },
   // { label: "FAQ", href: "/faq" },
   // { label: "Earn with us", href: "/earn-with-us" },
@@ -70,16 +79,16 @@ export const footerNav: NavItem[] = [
 ];
 
 export const footerAccountNav: NavItem[] = [
-  { label: "Log in", href: "/login" },
-  { label: "Sign up", href: "/register" },
-  { label: "My numbers", href: "/profile" },
-  { label: "Balance history", href: "/profile/history" },
+  { label: "nav.login", href: "/login" },
+  { label: "nav.signup", href: "/register" },
+  { label: "nav.myNumbers", href: "/profile" },
+  { label: "nav.balanceHistory", href: "/profile/history" },
 ];
 
 export const legalNav: NavItem[] = [
-  { label: "Privacy & cookie policy", href: "/privacy" },
-  { label: "Terms of service", href: "/terms" },
-  { label: "Legal information", href: "/legal" },
+  { label: "nav.privacy", href: "/privacy" },
+  { label: "nav.terms", href: "/terms" },
+  { label: "nav.legal", href: "/legal" },
 ];
 
 export function isNavGroup(item: NavItem | NavGroup): item is NavGroup {
