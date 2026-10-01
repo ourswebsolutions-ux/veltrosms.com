@@ -1,4 +1,5 @@
 import "server-only";
+import { serviceLogo } from "@/lib/service-logos";
 import { getCurrentUser, type SessionUser } from "@/server/auth/session";
 import { serviceColor } from "@/server/catalog/service-hints";
 import { db } from "@/server/db";
@@ -121,6 +122,7 @@ export async function getOrderStats(userId: string, range: { from?: Date; to?: D
       return {
         name: s.name,
         color: serviceColor(s.providerCode, s.name),
+        logo: serviceLogo(s.providerCode),
         total: groups.reduce((n, g) => n + g._count._all, 0),
         completed: completed.reduce((n, g) => n + g._count._all, 0),
         spent: completed.reduce((n, g) => n + (g._sum.price ? toMinor(g._sum.price) : 0), 0),

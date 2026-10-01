@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Alert } from "@/components/ui/Alert";
+import { ChargeRows, Money } from "@/components/currency/DisplayCurrency";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { NumberCard } from "@/components/orders/NumberCard";
@@ -130,7 +131,7 @@ export function PurchaseDialog({
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-[15px]">
             <dt className="text-fg-muted">Service</dt>
             <dd className="flex items-center gap-2 font-medium">
-              <ServiceAvatar name={intent.group.service.name} color={intent.group.service.color} size={22} />
+              <ServiceAvatar name={intent.group.service.name} color={intent.group.service.color} logo={intent.group.service.logo} size={22} />
               {intent.group.service.name}
             </dd>
             <dt className="text-fg-muted">Country</dt>
@@ -138,20 +139,21 @@ export function PurchaseDialog({
               <CountryFlag iso2={intent.group.country.iso2} />
               {intent.group.country.name}
             </dd>
-            <dt className="text-fg-muted">Price</dt>
-            <dd className="font-semibold text-primary">{formatPrice(agreedPrice, currency)}</dd>
+            <ChargeRows amount={agreedPrice} currency={currency} priceClassName="font-semibold text-primary" />
             <dt className="text-fg-muted">Available</dt>
             <dd>{formatQty(intent.tier.available)}</dd>
             {viewer.signedIn && (
               <>
                 <dt className="text-fg-muted">Your balance</dt>
                 <dd className={insufficient ? "font-semibold text-danger tabular-nums" : "font-medium tabular-nums"}>
-                  {formatPrice(viewer.balance, viewer.currency)}
+                  <Money amount={viewer.balance} currency={viewer.currency} variant="both" />
                 </dd>
                 {!insufficient && (
                   <>
                     <dt className="text-fg-muted">After purchase</dt>
-                    <dd className="font-medium tabular-nums">{formatPrice(after, viewer.currency)}</dd>
+                    <dd className="font-medium tabular-nums">
+                      <Money amount={after} currency={viewer.currency} variant="both" />
+                    </dd>
                   </>
                 )}
               </>

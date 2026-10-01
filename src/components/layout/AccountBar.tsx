@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
+import { Money, useDisplayCurrency } from "@/components/currency/DisplayCurrency";
 import { Icon } from "@/components/icons";
 import { Dropdown, dropdownItemClass } from "@/components/ui/Dropdown";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -11,7 +12,7 @@ import { accountNav } from "@/config/site";
 import { cn } from "@/lib/cn";
 
 /** `isAdmin` only decides whether the admin link is shown; access is enforced on the server. */
-export type AccountBarUser = { name: string; email: string; balance: string; isAdmin?: boolean } | null;
+export type AccountBarUser = { name: string; email: string; balance: number; currency: string; isAdmin?: boolean } | null;
 
 /**
  * Orange bar under the header.
@@ -19,7 +20,7 @@ export type AccountBarUser = { name: string; email: string; balance: string; isA
  *    account menu on the right.
  *  - Mobile: one full-width "Profile  $0 ▾" pill that expands the same links.
  */
-export function AccountBar({ user, guestBalance }: { user: AccountBarUser; guestBalance: string }) {
+export function AccountBar({ user }: { user: AccountBarUser }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const menuId = useId();
@@ -32,7 +33,9 @@ export function AccountBar({ user, guestBalance }: { user: AccountBarUser; guest
 
   // /profile is the "Received numbers" tab; it must not light up for sub-pages.
   const isActive = (href: string) => pathname === href;
-  const balance = user?.balance ?? guestBalance;
+  const { base } = useDisplayCurrency();
+  // Wallet balance in the platform currency, with the approximate value in the chosen display currency.
+  const balance = <Money amount={user?.balance ?? 0} currency={user?.currency ?? base} variant="both" approxClassName="text-white/75" />;
 
   return (
     <div className="bg-primary">

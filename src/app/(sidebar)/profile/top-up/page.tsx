@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { Icon } from "@/components/icons";
 import { ManualPaymentHelp, ManualTopUpForm, PaymentAccount } from "@/components/payments/ManualPayment";
 import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
@@ -38,7 +39,10 @@ export default async function TopUpPage() {
           actions={
             <span className="flex flex-wrap items-center gap-2">
               <span className="rounded-lg border border-line bg-surface-muted px-3 py-1.5 text-sm text-fg-muted">
-                Balance <b className="text-base text-fg tabular-nums">{formatPrice(profile.balance, profile.currency)}</b>
+                Balance{" "}
+              <b className="text-base text-fg tabular-nums">
+                <Money amount={profile.balance} currency={profile.currency} variant="both" />
+              </b>
               </span>
               {manual && <ManualPaymentHelp details={manual} email={profile.email} />}
             </span>

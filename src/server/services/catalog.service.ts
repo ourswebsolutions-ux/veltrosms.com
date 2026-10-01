@@ -1,5 +1,6 @@
 import "server-only";
-import { loadPricingRules } from "./pricing-rules";
+import { serviceLogo } from "@/lib/service-logos";
+import { loadPricingRules, marginOverride, pricingRules } from "./pricing-rules";
 import { toDecimalString, toMinor } from "@/lib/money";
 import { isoForCountryName } from "@/server/catalog/country-iso";
 import { popularRank, serviceColor } from "@/server/catalog/service-hints";
@@ -103,7 +104,7 @@ export async function syncCatalog(): Promise<SyncReport | null> {
       .filter((p) => p.cId && p.sId);
     for (let i = 0; i < priceRows.length; i += BATCH) {
       const rows = priceRows.slice(i, i + BATCH).map(
-        (p) => Prisma.sql`(${p.sId}, ${p.cId}, ${toDecimalString(p.cost)}, ${providerCur}, ${toDecimalString(customerPrice(p.cost))}, ${platform}, ${p.count}, ${p.count > 0 ? 1 : 0}, ${now}, ${now}, ${now})`,
+        (p) => Prisma.sql`(${p.sId}, ${p.cId}, ${toDecimalString(p.cost)}, ${providerCur}, ${toDecimalString(customerPrice(p.cost, pricingRules(), marginOverride(p.sId!, p.cId!)))}, ${platform}, ${p.count}, ${p.count > 0 ? 1 : 0}, ${now}, ${now}, ${now})`,
       );
       await db().$executeRaw`
         INSERT INTO prices (service_id, country_id, provider_cost, provider_currency, price, currency, available, is_active, synced_at, created_at, updated_at)
@@ -186,6 +187,7 @@ const toService = (s: ServiceRow): ServiceSummary => ({
   slug: s.slug,
   name: s.name,
   color: serviceColor(s.providerCode, s.name),
+  logo: serviceLogo(s.providerCode),
   popular: s.isPopular,
 });
 const toCountry = (c: CountryRow): CountrySummary => ({ id: String(c.id), iso2: c.iso2, name: c.name });
@@ -264,7 +266,7 @@ function toGroup(row: PriceRow, live: ProviderInventory | undefined): OfferGroup
   const override = row.priceOverride ? toMinor(row.priceOverride) : null;
   // Live price levels when available, otherwise the synced cheapest offer.
   const list: PriceTier[] = live
-    ? live.tiers.map((t) => ({ price: override ?? customerPrice(t.cost), available: t.count }))
+    ? live.tiers.map((t) => ({ price: override ?? customerPrice(t.cost, pricingRules(), marginOverride(row.service.id, row.country.id)), available: t.count }))
     : [{ price: override ?? toMinor(row.price), available: row.available }];
   // Merge levels that end up at the same customer price.
   const merged = new Map<number, number>();
@@ -371,7 +373,7 @@ export async function quote(serviceSlug: string, countryId: string, expectedPric
   if (inventory && !live) return null;
   const override = row.priceOverride ? toMinor(row.priceOverride) : null;
   const candidates = live
-    ? live.tiers.map((t) => ({ providerCost: t.cost, price: override ?? customerPrice(t.cost) }))
+    ? live.tiers.map((t) => ({ providerCost: t.cost, price: override ?? customerPrice(t.cost, pricingRules(), marginOverride(row.serviceId, row.countryId)) }))
     : [{ providerCost: toMinor(row.providerCost), price: override ?? toMinor(row.price) }];
   // The cheapest provider level that yields the price the customer agreed to.
   const match = candidates.filter((c) => c.price === expectedPrice).sort((a, b) => a.providerCost - b.providerCost)[0];

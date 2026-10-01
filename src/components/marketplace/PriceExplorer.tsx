@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icons";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { StatusDot } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
@@ -12,7 +13,7 @@ import { EmptyState, ErrorState } from "@/components/ui/States";
 import { SegmentedTabs } from "@/components/ui/Tabs";
 import { Table, TBody, Td, Th, THead, Tr, type SortDirection } from "@/components/ui/Table";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatQty } from "@/lib/format";
+import { formatQty } from "@/lib/format";
 import { parseAmount } from "@/lib/money";
 import type { Availability, CountrySummary, OfferGroup, Result, ServiceSummary } from "@/types/catalog";
 import { CountrySelector } from "./CountrySelector";
@@ -274,12 +275,14 @@ export function PriceExplorer({
                         {mode === "service" ? (
                           <CountryFlag iso2={g.country.iso2} />
                         ) : (
-                          <ServiceAvatar name={g.service.name} color={g.service.color} size={20} />
+                          <ServiceAvatar name={g.service.name} color={g.service.color} logo={g.service.logo} size={20} />
                         )}
                         {rowName(g)}
                       </span>
                     </Td>
-                    <Td className="tabular-nums">{formatPrice(g.minPrice, g.currency)}</Td>
+                    <Td className="tabular-nums">
+                      <Money amount={g.minPrice} currency={g.currency} />
+                    </Td>
                     <Td className="tabular-nums">{formatQty(g.totalAvailable)}</Td>
                     <Td>
                       <StatusDot tone={AVAILABILITY_LABEL[g.availability].tone}>
@@ -313,12 +316,12 @@ export function PriceExplorer({
                       {mode === "service" ? (
                         <CountryFlag iso2={g.country.iso2} />
                       ) : (
-                        <ServiceAvatar name={g.service.name} color={g.service.color} size={20} />
+                        <ServiceAvatar name={g.service.name} color={g.service.color} logo={g.service.logo} size={20} />
                       )}
                       {rowName(g)}
                     </span>
                     <span className="mt-1 grid grid-cols-[1fr_1.4fr_1.2fr] text-[15px] tabular-nums">
-                      <span>{formatPrice(g.minPrice, g.currency)}</span>
+                      <Money amount={g.minPrice} currency={g.currency} />
                       <span>{formatQty(g.totalAvailable)}</span>
                       <StatusDot tone={AVAILABILITY_LABEL[g.availability].tone}>
                         {AVAILABILITY_LABEL[g.availability].label}

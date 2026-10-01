@@ -5,6 +5,7 @@ import { FormMessage, SubmitButton } from "@/components/forms/FormParts";
 import { useFormAction } from "@/components/forms/useFormAction";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { Combobox } from "@/components/ui/Combobox";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { useResultToast } from "@/components/ui/Toast";
@@ -506,5 +507,154 @@ export function TopUpReviewForms({ approve, reject, paymentId, summary }: { appr
         <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={300} placeholder="e.g. No payment with this transaction ID was received." aria-label="Rejection reason" />
       </Confirm>
     </div>
+  );
+}
+
+/**
+ * Create or edit a Ready Made offer: service, country (or All countries),
+ * admin-set price and status. Every value is validated again on the server.
+ */
+export function ReadyMadeOfferForm({
+  action,
+  services,
+  countries,
+  currency,
+  initial,
+  submitLabel,
+}: {
+  action: Action;
+  services: { id: number; name: string }[];
+  countries: { id: number; name: string }[];
+  currency: string;
+  initial: { id?: number; serviceId: number | null; countryId: number | null; price: string; isActive: boolean };
+  submitLabel: string;
+}) {
+  const [state, run] = useFormAction(action);
+  useResultToast(state);
+  const [serviceId, setServiceId] = useState(initial.serviceId ? String(initial.serviceId) : "");
+  const [countryId, setCountryId] = useState(initial.countryId ? String(initial.countryId) : "all");
+  const serviceOptions = services.map((s) => ({ value: String(s.id), label: s.name }));
+  const countryOptions = [{ value: "all", label: "All countries" }, ...countries.map((c) => ({ value: String(c.id), label: c.name }))];
+  return (
+    <form action={run} className="space-y-4">
+      {initial.id !== undefined && <input type="hidden" name="id" value={initial.id} />}
+      <input type="hidden" name="serviceId" value={serviceId} />
+      <input type="hidden" name="countryId" value={countryId} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm text-fg">
+            Service<span className="ml-0.5 text-primary">*</span>
+          </span>
+          <Combobox label="Service" options={serviceOptions} value={serviceId} onChange={setServiceId} placeholder="Choose a service" searchPlaceholder="Search services" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm text-fg">
+            Country<span className="ml-0.5 text-primary">*</span>
+          </span>
+          <Combobox label="Country" options={countryOptions} value={countryId} onChange={setCountryId} searchPlaceholder="Search countries" />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={`Price (${currency})`} required hint="What the customer pays for one Ready Made account. Independent of provider prices.">
+          {(p) => <Input {...p} name="price" inputMode="decimal" placeholder="e.g. 2.50" defaultValue={initial.price} maxLength={20} required />}
+        </Field>
+        <div className="flex items-end pb-3">
+          <Checkbox name="isActive" defaultChecked={initial.isActive} label="Active (offered to customers once Ready Made purchases are live)" />
+        </div>
+      </div>
+      <FormMessage state={state} />
+      <SubmitButton>{submitLabel}</SubmitButton>
+    </form>
+  );
+}
+
+/**
+ * "+ Add Custom Margin" / "Edit": a service + country minimum margin that
+ * replaces the global minimum margin for that pair. Opens a dialog; closes and
+ * refreshes the list when saved. Everything is validated again on the server.
+ */
+export function CustomMarginDialog({
+  action,
+  services,
+  countries,
+  currency,
+  globalMinMargin,
+  initial,
+  trigger,
+}: {
+  action: Action;
+  services: { id: number; name: string }[];
+  countries: { id: number; name: string }[];
+  currency: string;
+  globalMinMargin: string;
+  initial?: { id: number; serviceId: number; countryId: number; minMargin: string };
+  trigger: { label: string; size?: "xs" | "sm"; tone?: "primary" | "outline" };
+}) {
+  const [open, setOpen] = useState(false);
+  const [state, run] = useFormAction(action);
+  useResultToast(state);
+  const [serviceId, setServiceId] = useState(initial ? String(initial.serviceId) : "");
+  const [countryId, setCountryId] = useState(initial ? String(initial.countryId) : "");
+  const formRef = useRef<HTMLFormElement>(null);
+  // Close once a save succeeds (state adjusted during render, no effect needed).
+  const [seen, setSeen] = useState(state);
+  if (state !== seen) {
+    setSeen(state);
+    if (state.status === "success") setOpen(false);
+  }
+  const serviceOptions = services.map((x) => ({ value: String(x.id), label: x.name }));
+  const countryOptions = countries.map((x) => ({ value: String(x.id), label: x.name }));
+  const outline = trigger.tone !== "primary";
+  return (
+    <>
+      <Button
+        type="button"
+        size={trigger.size ?? "sm"}
+        variant={outline ? "outline" : "primary"}
+        className={outline ? "!bg-surface !text-primary ring-1 ring-primary hover:!bg-primary-tint" : undefined}
+        onClick={() => setOpen(true)}
+      >
+        {trigger.label}
+      </Button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={initial ? "Edit custom margin" : "Add custom margin"}
+        footer={
+          <>
+            <Button variant="muted" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => formRef.current?.requestSubmit()}>Save</Button>
+          </>
+        }
+      >
+        <form ref={formRef} action={run} className="space-y-4">
+          {initial && <input type="hidden" name="id" value={initial.id} />}
+          <input type="hidden" name="serviceId" value={serviceId} />
+          <input type="hidden" name="countryId" value={countryId} />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-fg">
+              Service<span className="ml-0.5 text-primary">*</span>
+            </span>
+            <Combobox label="Service" options={serviceOptions} value={serviceId} onChange={setServiceId} placeholder="Choose a service" searchPlaceholder="Search services" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-fg">
+              Country<span className="ml-0.5 text-primary">*</span>
+            </span>
+            <Combobox label="Country" options={countryOptions} value={countryId} onChange={setCountryId} placeholder="Choose a country" searchPlaceholder="Search countries" />
+          </div>
+          <Field
+            label={`Minimum margin (${currency})`}
+            required
+            hint={`Replaces the global minimum margin (${globalMinMargin}) for this service in this country. The global markup still applies; the higher result wins.`}
+          >
+            {(p) => <Input {...p} name="minMargin" inputMode="decimal" placeholder="e.g. 0.30" defaultValue={initial?.minMargin ?? ""} maxLength={12} required />}
+          </Field>
+          <FormMessage state={state} />
+        </form>
+      </Modal>
+    </>
   );
 }

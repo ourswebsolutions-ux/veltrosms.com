@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/DisplayCurrency";
 import Link from "next/link";
 import { PaymentsTable } from "@/components/payments/PaymentsTable";
 import { DateRangeFilter } from "@/components/profile/DateRangeFilter";
@@ -14,7 +15,6 @@ import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/States";
 import { UnderlineTabs } from "@/components/ui/Tabs";
 import { resolveDateRange } from "@/lib/date-range";
-import { formatPrice } from "@/lib/format";
 import { parseAmount } from "@/lib/money";
 import { requireUser } from "@/server/auth/session";
 import { getAccountProfile, listTransactions } from "@/server/services/account.service";
@@ -113,7 +113,10 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
         actions={
           <span className="flex items-center gap-3">
             <span className="text-sm text-fg-muted">
-              Balance <b className="text-base text-fg tabular-nums">{formatPrice(profile.balance, profile.currency)}</b>
+              Balance{" "}
+              <b className="text-base text-fg tabular-nums">
+                <Money amount={profile.balance} currency={profile.currency} variant="both" />
+              </b>
             </span>
             <ButtonLink href="/profile/top-up" size="sm" variant="soft">
               Add funds

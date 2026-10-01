@@ -37,11 +37,15 @@ const PRICE_STEP = 10n;
 /**
  * Customer price for a provider cost: cost × FX × (1 + markup%), and at least
  * cost + minimum margin. Integer math only.
+ *
+ * `minMarginOverride` is a service + country custom margin (Admin → Custom
+ * Margins). It REPLACES the global minimum margin for that pair — it is not
+ * added to it — and the global markup still applies.
  */
-export function customerPrice(providerCostMinor: number, rules: PricingRules | null = pricingRules()): number {
+export function customerPrice(providerCostMinor: number, rules: PricingRules | null = pricingRules(), minMarginOverride: string | null = null): number {
   const cost = BigInt(providerToPlatform(providerCostMinor));
   const markupPercent = rules ? Number(rules.markupPercent) : env().PRICE_MARKUP_PERCENT;
-  const minMargin = rules ? rules.minMargin : env().PRICE_MIN_MARGIN.toFixed(4);
+  const minMargin = minMarginOverride ?? (rules ? rules.minMargin : env().PRICE_MIN_MARGIN.toFixed(4));
   const markupBps = scaled(markupPercent, 100n); // 20 → 2000 bps
   const marked = ceilDiv(cost * (BPS + markupBps), BPS);
   const floor = cost + BigInt(toMinor(minMargin));

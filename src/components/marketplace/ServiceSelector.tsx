@@ -31,7 +31,7 @@ export function ServiceSelector({
       services.map((s) => ({
         value: s.slug,
         label: s.name,
-        icon: <ServiceAvatar name={s.name} color={s.color} size={26} />,
+        icon: <ServiceAvatar name={s.name} color={s.color} logo={s.logo} size={26} />,
       })),
     [services],
   );
@@ -73,7 +73,7 @@ function ServiceGrid({
     <div className={className}>
       <label className="relative mb-2 flex h-12 items-center gap-2 rounded-lg border border-line bg-surface-muted pr-2 pl-2 focus-within:border-primary">
         {selected && !q ? (
-          <ServiceAvatar name={selected.name} color={selected.color} size={30} />
+          <ServiceAvatar name={selected.name} color={selected.color} logo={selected.logo} size={30} />
         ) : (
           <Icon name="search" size={22} className="mx-1 text-fg-subtle" />
         )}
@@ -117,7 +117,7 @@ function ServiceGrid({
                       : "border-line bg-surface-muted text-fg hover:border-primary-tint-border hover:bg-primary-tint",
                   )}
                 >
-                  <ServiceAvatar name={s.name} color={s.color} size={30} />
+                  <ServiceAvatar name={s.name} color={s.color} logo={s.logo} size={30} />
                   <span className="truncate">{s.name}</span>
                 </button>
               </li>

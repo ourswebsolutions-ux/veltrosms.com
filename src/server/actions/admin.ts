@@ -12,6 +12,14 @@ import {
   setServicePopular,
   triggerCatalogSync,
 } from "@/server/admin/platform";
+import {
+  createReadyMadeOffer,
+  deleteReadyMadeOffer,
+  setReadyMadeOfferActive,
+  updateReadyMadeOffer,
+  type ReadyMadeOfferInput,
+} from "@/server/admin/ready-made";
+import { createMarginRule, deleteMarginRule, updateMarginRule, type MarginInput } from "@/server/admin/margins";
 import { approveTopUp, rejectTopUp } from "@/server/admin/topups";
 import {
   activateUser,
@@ -214,4 +222,77 @@ export async function adminRejectTopUpAction(_prev: FormState, data: FormData): 
   const id = uuid.safeParse(field(data, "paymentId"));
   if (!id.success) return INVALID;
   return run((a) => rejectTopUp(a, id.data, field(data, "reason").slice(0, 400)));
+}
+
+/* ------------------------------------------------- ready made accounts -- */
+
+/** Parses the offer form; "all" is the All-countries choice. Ids are re-checked in the service. */
+function readyMadeInput(data: FormData): ReadyMadeOfferInput | null {
+  const serviceId = intId.safeParse(field(data, "serviceId"));
+  const countryRaw = field(data, "countryId");
+  const countryId = countryRaw === "all" ? null : intId.safeParse(countryRaw);
+  if (!serviceId.success || (countryId !== null && !countryId.success)) return null;
+  return {
+    serviceId: serviceId.data,
+    countryId: countryId === null ? null : countryId.data,
+    price: field(data, "price").trim().slice(0, 20),
+    isActive: data.get("isActive") === "on",
+  };
+}
+
+export async function adminReadyMadeCreateAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const input = readyMadeInput(data);
+  if (!input) return { status: "error", message: "Choose a service and a country (or All countries)." };
+  return run((a) => createReadyMadeOffer(a, input));
+}
+
+export async function adminReadyMadeUpdateAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  const input = readyMadeInput(data);
+  if (!id.success) return INVALID;
+  if (!input) return { status: "error", message: "Choose a service and a country (or All countries)." };
+  const result = await run((a) => updateReadyMadeOffer(a, id.data, input));
+  return result.status === "success" ? { ...result, redirectTo: "/admin/ready-made-accounts" } : result;
+}
+
+export async function adminReadyMadeToggleAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  const active = z.enum(["true", "false"]).safeParse(field(data, "active"));
+  if (!id.success || !active.success) return INVALID;
+  return run((a) => setReadyMadeOfferActive(a, id.data, active.data === "true"));
+}
+
+export async function adminReadyMadeDeleteAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  if (!id.success) return INVALID;
+  return run((a) => deleteReadyMadeOffer(a, id.data));
+}
+
+/* ------------------------------------------------------- custom margins -- */
+
+function marginInput(data: FormData): MarginInput | null {
+  const serviceId = intId.safeParse(field(data, "serviceId"));
+  const countryId = intId.safeParse(field(data, "countryId"));
+  if (!serviceId.success || !countryId.success) return null;
+  return { serviceId: serviceId.data, countryId: countryId.data, minMargin: field(data, "minMargin").trim().slice(0, 12) };
+}
+
+export async function adminMarginCreateAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const input = marginInput(data);
+  if (!input) return { status: "error", message: "Choose a service and a country." };
+  return run((a) => createMarginRule(a, input));
+}
+
+export async function adminMarginUpdateAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  const input = marginInput(data);
+  if (!id.success) return INVALID;
+  if (!input) return { status: "error", message: "Choose a service and a country." };
+  return run((a) => updateMarginRule(a, id.data, input));
+}
+
+export async function adminMarginDeleteAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  if (!id.success) return INVALID;
+  return run((a) => deleteMarginRule(a, id.data));
 }

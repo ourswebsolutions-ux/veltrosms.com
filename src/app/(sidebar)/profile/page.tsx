@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { Icon } from "@/components/icons";
 import { ActiveOrdersList } from "@/components/orders/ActiveOrdersList";
 import { LogoutButton } from "@/components/forms/LogoutButton";
@@ -10,7 +11,6 @@ import { Card } from "@/components/ui/Card";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
-import { formatPrice } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getAccountProfile, listTransactions } from "@/server/services/account.service";
 import { listActiveOrders, listOrders } from "@/server/services/order.service";
@@ -55,7 +55,9 @@ export default async function ProfilePage() {
           <div className="flex items-center gap-4 rounded-xl border border-line bg-surface-muted/60 px-4 py-3">
             <div>
               <p className="text-[13px] text-fg-muted">Balance</p>
-              <p className="text-2xl font-semibold tabular-nums">{formatPrice(p.balance, p.currency)}</p>
+              <p className="text-2xl font-semibold tabular-nums">
+                <Money amount={p.balance} currency={p.currency} variant="stack" approxClassName="text-sm" />
+              </p>
             </div>
             <ButtonLink href="/profile/top-up">
               <Icon name="plus" size={18} /> Top up

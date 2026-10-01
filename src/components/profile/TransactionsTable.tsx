@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPrice, formatShortDateTime } from "@/lib/format";
+import { formatDateTime, formatShortDateTime } from "@/lib/format";
 import type { TransactionListItem, TransactionType } from "@/types/account";
 
 export const TRANSACTION_LABEL: Record<TransactionType, string> = {
@@ -34,10 +35,7 @@ function Source({ t }: { t: TransactionListItem }) {
 
 function Amount({ value, currency }: { value: number; currency: string }) {
   return (
-    <span className={cn("font-medium tabular-nums", value >= 0 ? "text-success" : "text-fg")}>
-      {value >= 0 ? "+" : "−"}
-      {formatPrice(Math.abs(value), currency)}
-    </span>
+    <Money amount={value} currency={currency} signed variant="stack" className={cn("font-medium tabular-nums", value >= 0 ? "text-success" : "text-fg")} />
   );
 }
 
@@ -70,7 +68,9 @@ export function TransactionsTable({ transactions }: { transactions: TransactionL
               <Td className="text-right">
                 <Amount value={t.amount} currency={t.currency} />
               </Td>
-              <Td className="pr-0 text-right tabular-nums text-fg-muted">{formatPrice(t.balanceAfter, t.currency)}</Td>
+              <Td className="pr-0 text-right tabular-nums text-fg-muted">
+                <Money amount={t.balanceAfter} currency={t.currency} variant="stack" className="items-end" />
+              </Td>
             </Tr>
           ))}
         </TBody>
@@ -90,7 +90,9 @@ export function TransactionsTable({ transactions }: { transactions: TransactionL
             </div>
             <div className="shrink-0 text-right">
               <Amount value={t.amount} currency={t.currency} />
-              <p className="text-xs text-fg-subtle tabular-nums">{formatPrice(t.balanceAfter, t.currency)}</p>
+              <p className="text-xs text-fg-subtle tabular-nums">
+                <Money amount={t.balanceAfter} currency={t.currency} variant="stack" className="items-end" />
+              </p>
             </div>
           </li>
         ))}

@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useDisplayCurrency } from "@/components/currency/DisplayCurrency";
 import { Icon } from "@/components/icons";
 import { Dropdown, dropdownItemClass } from "@/components/ui/Dropdown";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/cn";
+import { DISPLAY_CURRENCIES } from "@/lib/display-currency";
 import { SOUND_KEY, usePref, useTheme } from "@/lib/preferences";
 
 /** Square light-grey icon button used in the header's right cluster. */
@@ -93,6 +95,56 @@ export function LanguageMenu() {
         English <Icon name="check" size={16} />
       </button>
       <p className="px-3 pt-2 pb-1 text-xs text-fg-muted">More languages coming soon.</p>
+    </Dropdown>
+  );
+}
+
+/**
+ * Website-wide display currency (USD, PKR, INR, BDT). Display only: every
+ * purchase is still charged in the platform currency. Currencies without a
+ * current exchange rate are listed as unavailable.
+ */
+export function CurrencyMenu() {
+  const { selected, setSelected, base, rates, rate } = useDisplayCurrency();
+  // A chosen currency whose rate is unavailable falls back to the original prices.
+  const shown = selected === base || rate ? selected : base;
+  return (
+    <Dropdown
+      label={`Currency: ${shown}`}
+      align="right"
+      panelClassName="w-64"
+      trigger={({ open }) => (
+        <span className={cn(headerIconButton, "w-auto gap-1 px-2.5 text-[13px] font-bold text-fg")}>
+          <span className="hidden font-medium text-fg-muted sm:inline">Currency:</span>
+          {shown}
+          <Icon name="caretDown" size={14} className={cn("text-primary transition-transform", open && "rotate-180")} />
+        </span>
+      )}
+    >
+      {DISPLAY_CURRENCIES.map((c) => {
+        const available = c.code === base || Boolean(rates[c.code]);
+        const active = c.code === shown;
+        return (
+          <button
+            key={c.code}
+            type="button"
+            data-close
+            disabled={!available}
+            aria-current={active ? "true" : undefined}
+            onClick={() => setSelected(c.code)}
+            className={cn(dropdownItemClass(active), "justify-between disabled:cursor-not-allowed disabled:opacity-50")}
+          >
+            <span>
+              <b className="font-semibold">{c.code}</b> — {c.name}
+              {!available && <span className="block text-xs text-fg-muted">Rate unavailable right now</span>}
+            </span>
+            {active && <Icon name="check" size={16} />}
+          </button>
+        );
+      })}
+      <p className="border-t border-line px-3 pt-2 pb-1 text-xs text-fg-muted">
+        Converted prices are approximate. You are always charged in {base}.
+      </p>
     </Dropdown>
   );
 }

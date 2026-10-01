@@ -10,7 +10,7 @@ export function SmsHistoryList({ messages }: { messages: SmsHistoryItem[] }) {
       {messages.map((m) => (
         <li key={m.id} className="rounded-xl border border-line p-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <ServiceAvatar name={m.service.name} color={m.service.color} size={26} />
+            <ServiceAvatar name={m.service.name} color={m.service.color} logo={m.service.logo} size={26} />
             <div className="min-w-0 flex-1 leading-tight">
               <Link href={`/profile/orders/${m.orderId}`} className="font-medium hover:text-primary">
                 {m.service.name}

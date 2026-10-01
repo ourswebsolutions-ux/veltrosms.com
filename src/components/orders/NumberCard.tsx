@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Icon } from "@/components/icons";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/cn";
-import { formatPhone, formatPrice, formatShortDateTime } from "@/lib/format";
+import { formatPhone, formatShortDateTime } from "@/lib/format";
 import { SOUND_KEY, usePref } from "@/lib/preferences";
 import { cancelOrderAction, finishOrderAction, requestAnotherSmsAction } from "@/server/actions/orders";
 import type { OrderActionResult } from "@/server/services/order.service";
@@ -121,12 +122,12 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
       className={cn("@container rounded-xl border bg-surface p-4", waiting ? "border-primary-tint-border" : "border-line", className)}
     >
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <ServiceAvatar name={order.service.name} color={order.service.color} size={32} />
+        <ServiceAvatar name={order.service.name} color={order.service.color} logo={order.service.logo} size={32} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{order.service.name}</p>
           <p className="flex items-center gap-1.5 text-[13px] text-fg-muted">
             <CountryFlag iso2={order.country.iso2} size={16} />
-            {order.country.name} · {formatPrice(order.price, order.currency)}
+            {order.country.name} · <Money amount={order.price} currency={order.currency} variant="both" />
           </p>
         </div>
         <OrderStatus status={order.status} />
@@ -259,7 +260,10 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
           </p>
           <Alert tone="info">
             No SMS has arrived, so once the provider confirms the cancellation{" "}
-            <b>{formatPrice(order.price, order.currency)}</b> returns to your balance. If the provider can&apos;t
+            <b>
+              <Money amount={order.price} currency={order.currency} variant="both" />
+            </b>{" "}
+            returns to your balance. If the provider can&apos;t
             confirm it yet, nothing changes and you can try again.
           </Alert>
         </div>

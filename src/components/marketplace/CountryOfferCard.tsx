@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/icons";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { PricePill } from "@/components/ui/Badge";
 import { CountryFlag } from "@/components/ui/CatalogVisuals";
 import { cn } from "@/lib/cn";
@@ -46,14 +47,18 @@ export function CountryOfferCard({
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-base font-medium text-fg">{group.country.name}</p>
           {multi && (
-            <p className="text-[13px] text-fg-muted">from {formatPrice(group.minPrice, group.currency)}</p>
+            <p className="text-[13px] text-fg-muted">
+              from <Money amount={group.minPrice} currency={group.currency} />
+            </p>
           )}
         </div>
         <span className="text-[15px] whitespace-nowrap text-fg-muted tabular-nums">
           {formatQty(group.totalAvailable)}
         </span>
         <button type="button" onClick={() => onSelect(headline)} aria-label={`Buy ${group.country.name} number for ${formatPrice(headline.price, group.currency)}`}>
-          <PricePill className="hover:bg-primary-hover">{formatPrice(headline.price, group.currency)}</PricePill>
+          <PricePill className="hover:bg-primary-hover">
+            <Money amount={headline.price} currency={group.currency} />
+          </PricePill>
         </button>
       </div>
 
@@ -72,7 +77,9 @@ export function CountryOfferCard({
                   className="flex h-11 w-full items-center justify-between rounded-lg bg-surface px-3 text-left text-[15px] text-fg-muted transition-colors hover:ring-1 hover:ring-primary focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <span>Available {formatQty(tier.available)}</span>
-                  <PricePill size="sm">{formatPrice(tier.price, group.currency)}</PricePill>
+                  <PricePill size="sm">
+                    <Money amount={tier.price} currency={group.currency} />
+                  </PricePill>
                 </button>
               </li>
             ))}

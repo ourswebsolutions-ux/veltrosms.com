@@ -83,6 +83,18 @@ const schema = z.object({
   TOPUP_FEE_FIXED: decimalAmount.default("0"),
   /** Gateway (redirect) providers only: how long a created payment stays payable. */
   PAYMENT_EXPIRY_MINUTES: z.coerce.number().int().min(5).max(7 * 24 * 60).default(60),
+
+  /* Display-only currency conversion (never used for charging) */
+  /**
+   * Fixed display rates: units per 1 PLATFORM_CURRENCY unit, for the website
+   * currency selector. Any that is unset uses the live rate from
+   * EXCHANGE_RATES_URL (cached). Display only — never used for charging.
+   */
+  DISPLAY_PKR_RATE: z.coerce.number().positive().max(1_000_000).optional(),
+  DISPLAY_INR_RATE: z.coerce.number().positive().max(1_000_000).optional(),
+  DISPLAY_BDT_RATE: z.coerce.number().positive().max(1_000_000).optional(),
+  /** Public exchange-rate API (no key); the base currency code is appended. */
+  EXCHANGE_RATES_URL: z.url().default("https://open.er-api.com/v6/latest/"),
 });
 
 /** Cross-field rules. */

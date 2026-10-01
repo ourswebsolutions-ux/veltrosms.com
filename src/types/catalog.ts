@@ -10,6 +10,8 @@ export type ServiceSummary = {
   slug: string;
   name: string;
   color: string;
+  /** Real logo (/service-logos/…svg) for well-known services; null = letter avatar. */
+  logo: string | null;
   popular: boolean;
 };
 

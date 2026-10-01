@@ -1,4 +1,5 @@
 import "server-only";
+import { serviceLogo } from "@/lib/service-logos";
 import { createHash } from "node:crypto";
 import { toDecimalString, toMinor } from "@/lib/money";
 import { hitRateLimit, RATE_LIMITS } from "@/server/auth/rate-limit";
@@ -70,7 +71,12 @@ export function toOrderItem(o: OrderRow): OrderListItem {
   const hasSms = o._count.sms > 0;
   return {
     id: o.id,
-    service: { slug: o.service.slug, name: o.service.name, color: serviceColor(o.service.providerCode, o.service.name) },
+    service: {
+      slug: o.service.slug,
+      name: o.service.name,
+      color: serviceColor(o.service.providerCode, o.service.name),
+      logo: serviceLogo(o.service.providerCode),
+    },
     country: { id: String(o.country.id), iso2: o.country.iso2, name: o.country.name },
     phoneNumber: o.phoneNumber,
     status,
@@ -503,7 +509,11 @@ export async function listSmsHistory(
     items: rows.map((m) => ({
       id: m.id,
       orderId: m.order.id,
-      service: { name: m.order.service.name, color: serviceColor(m.order.service.providerCode, m.order.service.name) },
+      service: {
+        name: m.order.service.name,
+        color: serviceColor(m.order.service.providerCode, m.order.service.name),
+        logo: serviceLogo(m.order.service.providerCode),
+      },
       country: { iso2: m.order.country.iso2, name: m.order.country.name },
       phoneNumber: m.order.phoneNumber,
       sender: m.sender,

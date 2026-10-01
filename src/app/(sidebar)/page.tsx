@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FeedbackForm } from "@/components/forms/FeedbackForm";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { Icon, type IconName } from "@/components/icons";
 import { PromoCarousel } from "@/components/marketplace/PromoCarousel";
 import { PricePill } from "@/components/ui/Badge";
@@ -11,7 +12,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
 import { siteConfig } from "@/config/site";
 import { FAQ } from "@/content/faq";
-import { formatPrice } from "@/lib/format";
 import { getPopularOffers, listCountries, listServices } from "@/server/services/catalog.service";
 
 export default async function HomePage() {
@@ -46,7 +46,7 @@ export default async function HomePage() {
                   href={`/price?service=${g.service.slug}`}
                   className="flex h-12 items-center gap-2 rounded-lg border border-line px-1.5 transition-colors hover:border-primary-tint-border hover:bg-primary-tint/40"
                 >
-                  <ServiceAvatar name={g.service.name} color={g.service.color} size={30} />
+                  <ServiceAvatar name={g.service.name} color={g.service.color} logo={g.service.logo} size={30} />
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="block truncate text-[15px] font-medium text-fg">{g.service.name}</span>
                     <span className="flex items-center gap-1 truncate text-[13px] text-fg-muted">
@@ -55,7 +55,7 @@ export default async function HomePage() {
                     </span>
                   </span>
                   <PricePill size="sm" className="min-w-[60px] justify-center">
-                    {formatPrice(g.minPrice, g.currency)}
+                    <Money amount={g.minPrice} currency={g.currency} />
                   </PricePill>
                 </Link>
               </li>

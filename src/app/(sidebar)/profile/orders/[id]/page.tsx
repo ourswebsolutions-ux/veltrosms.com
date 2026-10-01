@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { notFound } from "next/navigation";
 import { NumberCard } from "@/components/orders/NumberCard";
 import { ORDER_STATUS, OrderStatus } from "@/components/orders/OrderStatus";
@@ -11,7 +12,7 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPhone, formatPrice } from "@/lib/format";
+import { formatDateTime, formatPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getOrderDetail } from "@/server/services/order.service";
 import { ACTIVE_ORDER_STATUSES } from "@/types/account";
@@ -39,7 +40,7 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
     [
       "Service",
       <span key="svc" className="inline-flex items-center gap-2">
-        <ServiceAvatar name={order.service.name} color={order.service.color} size={20} />
+        <ServiceAvatar name={order.service.name} color={order.service.color} logo={order.service.logo} size={20} />
         {order.service.name}
       </span>,
     ],
@@ -61,7 +62,7 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
         "Not assigned"
       ),
     ],
-    ["Price", <span key="price" className="font-medium tabular-nums">{formatPrice(order.price, order.currency)}</span>],
+    ["Price", <Money key="price" amount={order.price} currency={order.currency} variant="both" className="font-medium tabular-nums" />],
     ["Status", <OrderStatus key="status" status={order.status} />],
     ["Created", formatDateTime(order.createdAt)],
   ];
@@ -135,8 +136,7 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
                   <p className="text-[13px] text-fg-muted">{formatDateTime(t.createdAt)}</p>
                 </div>
                 <span className={cn("font-medium tabular-nums", t.amount >= 0 ? "text-success" : "text-fg")}>
-                  {t.amount >= 0 ? "+" : "−"}
-                  {formatPrice(Math.abs(t.amount), order.currency)}
+                  <Money amount={t.amount} currency={order.currency} signed variant="stack" className="items-end" />
                 </span>
               </li>
             ))}

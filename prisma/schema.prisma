@@ -57,13 +57,14 @@ model User {
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
 
-  sessions     Session[]
-  authTokens   AuthToken[]
-  wallet       Wallet?
-  orders       Order[]
-  transactions Transaction[]
-  applications PartnerApplication[]
-  payments     Payment[]
+  sessions        Session[]
+  authTokens      AuthToken[]
+  wallet          Wallet?
+  orders          Order[]
+  transactions    Transaction[]
+  applications    PartnerApplication[]
+  payments        Payment[]
+  readyMadeOrders ReadyMadeOrder[]
 
   @@index([role])
   @@index([status, createdAt])
@@ -144,8 +145,11 @@ model Country {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  prices Price[]
-  orders Order[]
+  prices          Price[]
+  orders          Order[]
+  readyMadeOffers ReadyMadeOffer[]
+  readyMadeOrders ReadyMadeOrder[]
+  marginRules     ServiceCountryMargin[]
 
   @@unique([provider, providerCode])
   @@index([isActive, providerActive, displayOrder])
@@ -168,8 +172,11 @@ model Service {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  prices Price[]
-  orders Order[]
+  prices          Price[]
+  orders          Order[]
+  readyMadeOffers ReadyMadeOffer[]
+  readyMadeOrders ReadyMadeOrder[]
+  marginRules     ServiceCountryMargin[]
 
   @@unique([provider, providerCode])
   @@index([isActive, providerActive, isPopular, displayOrder])
@@ -201,6 +208,29 @@ model Price {
   @@unique([serviceId, countryId])
   @@index([countryId])
   @@map("prices")
+}
+
+/**
+ * Admin exception to the global pricing rule: a custom minimum margin for one
+ * service in one country. It REPLACES the global minimum margin for that pair
+ * (it is not added to it); the global markup still applies and the higher of
+ * the two wins. Pairs without a rule use the global rule (Admin → Pricing).
+ */
+model ServiceCountryMargin {
+  id        Int      @id @default(autoincrement())
+  serviceId Int      @map("service_id")
+  countryId Int      @map("country_id")
+  /// Minimum margin over provider cost, in the platform currency.
+  minMargin Decimal  @map("min_margin") @db.Decimal(18, 4)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  country Country @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@unique([serviceId, countryId])
+  @@index([countryId])
+  @@map("service_country_margins")
 }
 
 /**
@@ -557,4 +587,87 @@ model AuditLog {
   @@index([action, createdAt])
   @@index([targetType, targetId])
   @@map("audit_logs")
+}
+
+/**
+ * -------------------------------------------------- ready made accounts --
+ * Admin-configured Ready Made offers: which service (and optionally which
+ * country) is sold as a ready made account, at an admin-set customer price.
+ * Independent of provider prices and of provider-synced data.
+ */
+model ReadyMadeOffer {
+  id         Int      @id @default(autoincrement())
+  serviceId  Int      @map("service_id")
+  /// A specific country, or null for "All countries".
+  countryId  Int?     @map("country_id")
+  /// countryId, or 0 for "All countries". Makes (service, country) unique even for
+  /// All (MySQL allows repeated NULLs in a unique index); a CHECK constraint keeps
+  /// it equal to COALESCE(country_id, 0).
+  countryKey Int      @default(0) @map("country_key")
+  /// Customer price set by an administrator, in currency.
+  price      Decimal  @db.Decimal(18, 4)
+  currency   String   @db.Char(3)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  service Service          @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  country Country?         @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  orders  ReadyMadeOrder[]
+
+  @@unique([serviceId, countryKey])
+  @@index([countryId])
+  @@index([isActive])
+  @@map("ready_made_offers")
+}
+
+enum ReadyMadeOrderStatus {
+  /// Paid from the wallet; the customer contacts support on WhatsApp to receive it.
+  AWAITING_DELIVERY
+  /// The customer confirmed they received it (set by the customer only; final).
+  COMPLETED
+}
+
+/**
+ * A customer's Ready Made purchase. Delivered manually (WhatsApp), never
+ * through the SMS provider, and deliberately separate from `orders`, so the
+ * provider order sweep never sees it. The charge is the ledger entry with
+ * reference "ready_made:<id>:charge", created in the same transaction.
+ */
+model ReadyMadeOrder {
+  id             String               @id @default(uuid()) @db.Char(36)
+  /// Short public reference the customer gives support, e.g. "RM-7K3F9Q2A".
+  reference      String               @unique @db.VarChar(16)
+  userId         String               @map("user_id") @db.Char(36)
+  /// The offer bought (null once an admin deletes it; the snapshot below stays).
+  offerId        Int?                 @map("offer_id")
+  serviceId      Int                  @map("service_id")
+  /// null = "All countries".
+  countryId      Int?                 @map("country_id")
+  /// Snapshot of what was bought, as shown to the customer.
+  serviceName    String               @map("service_name") @db.VarChar(120)
+  countryName    String?              @map("country_name") @db.VarChar(120)
+  /// Charged to the customer, in currency.
+  price          Decimal              @db.Decimal(18, 4)
+  currency       String               @db.Char(3)
+  status         ReadyMadeOrderStatus @default(AWAITING_DELIVERY)
+  /// When the customer marked it completed.
+  completedAt    DateTime?            @map("completed_at")
+  /// Client-supplied key: a repeated submit returns the same order.
+  idempotencyKey String               @map("idempotency_key") @db.VarChar(64)
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  offer   ReadyMadeOffer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  service Service         @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  country Country?        @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([offerId])
+  @@index([serviceId])
+  @@index([countryId])
+  @@index([status, createdAt])
+  @@map("ready_made_orders")
 }

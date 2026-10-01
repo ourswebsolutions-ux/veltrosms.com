@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
@@ -10,7 +11,7 @@ export function StatCard({
 }: {
   icon: IconName;
   label: string;
-  value: string;
+  value: ReactNode;
   hint?: string;
   className?: string;
 }) {

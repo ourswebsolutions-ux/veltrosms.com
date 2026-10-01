@@ -16,13 +16,15 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:seed:admin": "tsx --conditions=react-server prisma/seed-admin.ts",
+    "db:seed:ready-made": "tsx --conditions=react-server prisma/seed-ready-made.ts",
     "db:studio": "prisma studio",
     "catalog:sync": "tsx --conditions=react-server scripts/catalog-sync.ts",
     "orders:sweep": "tsx --conditions=react-server scripts/orders-sweep.ts",
     "payments:reconcile": "tsx --conditions=react-server scripts/payments-reconcile.ts",
     "admin:role": "tsx --conditions=react-server scripts/admin-role.ts",
     "wallet:adjust": "tsx --conditions=react-server scripts/wallet-adjust.ts",
-    "provider:check": "tsx --conditions=react-server scripts/provider-check.ts"
+    "provider:check": "tsx --conditions=react-server scripts/provider-check.ts",
+    "logos:generate": "node scripts/generate-service-logos.mjs"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.0",
@@ -44,6 +46,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "prisma": "^7.10.0",
+    "simple-icons": "^16.33.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 /**
@@ -38,20 +39,38 @@ export function CountryFlag({
 }
 
 /**
- * Letter avatar for a service. We deliberately don't ship third-party logos;
- * swap this for licensed icons later if desired.
+ * Service avatar: the real logo for well-known services (see
+ * src/lib/service-logos.ts), otherwise a letter on the service colour. It is
+ * decorative — the service name is always shown next to it.
  */
 export function ServiceAvatar({
   name,
   color,
+  logo,
   size = 28,
   className,
 }: {
   name: string;
   color: string;
+  /** /service-logos/….svg, or null/undefined for the letter avatar. */
+  logo?: string | null;
   size?: number;
   className?: string;
 }) {
+  if (logo) {
+    return (
+      <Image
+        src={logo}
+        alt=""
+        aria-hidden="true"
+        width={size}
+        height={size}
+        unoptimized
+        className={cn("block shrink-0 rounded-full object-contain", className)}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   const light = isLight(color);
   return (
     <span

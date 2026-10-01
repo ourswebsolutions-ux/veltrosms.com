@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { OrderStatus } from "@/components/orders/OrderStatus";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { formatDateTime, formatPhone, formatPrice, formatShortDateTime } from "@/lib/format";
+import { formatDateTime, formatPhone, formatShortDateTime } from "@/lib/format";
 import type { OrderListItem } from "@/types/account";
 
 /** Orders as a table on ≥ md and as stacked cards on phones. */
@@ -32,7 +33,7 @@ export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
               </Td>
               <Td>
                 <span className="flex items-center gap-2 font-medium">
-                  <ServiceAvatar name={o.service.name} color={o.service.color} size={22} />
+                  <ServiceAvatar name={o.service.name} color={o.service.color} logo={o.service.logo} size={22} />
                   <span className="min-w-0">
                     <Link href={`/profile/orders/${o.id}`} className="block max-w-32 truncate hover:text-primary xl:max-w-40">
                       {o.service.name}
@@ -54,7 +55,9 @@ export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
               <Td>
                 <OrderStatus status={o.status} />
               </Td>
-              <Td className="pr-0 text-right tabular-nums">{formatPrice(o.price, o.currency)}</Td>
+              <Td className="pr-0 text-right tabular-nums">
+                <Money amount={o.price} currency={o.currency} variant="stack" className="items-end" />
+              </Td>
             </Tr>
           ))}
         </TBody>
@@ -64,7 +67,7 @@ export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
         {orders.map((o) => (
           <li key={o.id} className="relative rounded-xl border border-line p-3 hover:border-primary-tint-border">
             <div className="flex items-center gap-2.5">
-              <ServiceAvatar name={o.service.name} color={o.service.color} size={28} />
+              <ServiceAvatar name={o.service.name} color={o.service.color} logo={o.service.logo} size={28} />
               <div className="min-w-0 flex-1">
                 <Link href={`/profile/orders/${o.id}`} className="block truncate font-medium after:absolute after:inset-0">
                   {o.service.name}
@@ -73,7 +76,7 @@ export function OrdersTable({ orders }: { orders: OrderListItem[] }) {
                   <CountryFlag iso2={o.country.iso2} size={14} /> {o.country.name}
                 </p>
               </div>
-              <span className="font-semibold tabular-nums">{formatPrice(o.price, o.currency)}</span>
+              <Money amount={o.price} currency={o.currency} variant="stack" className="items-end font-semibold tabular-nums" />
             </div>
             <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-sm">
               <OrderStatus status={o.status} />

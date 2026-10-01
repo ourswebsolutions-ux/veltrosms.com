@@ -1,9 +1,8 @@
 import { PageContainer } from "@/components/ui/PageContainer";
-import { formatPrice } from "@/lib/format";
 import { getCurrentUser } from "@/server/auth/session";
 import { getAccountProfile } from "@/server/services/account.service";
 import { AccountBar } from "./AccountBar";
-import { LanguageMenu, NotificationsMenu, SoundToggle, ThemeToggle } from "./HeaderControls";
+import { CurrencyMenu, LanguageMenu, NotificationsMenu, SoundToggle, ThemeToggle } from "./HeaderControls";
 import { Logo } from "./Logo";
 import { MobileNavbar } from "./MobileNavbar";
 import { Navbar } from "./Navbar";
@@ -23,6 +22,7 @@ export async function Header() {
           <Logo />
           <Navbar />
           <div className="ml-auto flex items-center gap-2">
+            <CurrencyMenu />
             <LanguageMenu />
             <ThemeToggle className="hidden lg:flex" />
             <NotificationsMenu />
@@ -34,10 +34,9 @@ export async function Header() {
       <AccountBar
         user={
           profile
-            ? { name: profile.name, email: profile.email, balance: formatPrice(profile.balance, profile.currency), isAdmin: user?.role === "admin" }
+            ? { name: profile.name, email: profile.email, balance: profile.balance, currency: profile.currency, isAdmin: user?.role === "admin" }
             : null
         }
-        guestBalance={formatPrice(0)}
       />
     </header>
   );

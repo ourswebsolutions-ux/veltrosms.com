@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { ActivityChart } from "@/components/profile/ActivityChart";
 import { DateRangeFilter } from "@/components/profile/DateRangeFilter";
 import { StatCard } from "@/components/profile/ProfileParts";
@@ -24,7 +25,7 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
   const one = (v: string | string[] | undefined) => (typeof v === "string" ? v.slice(0, 20) : undefined);
   const range = resolveDateRange({ range: one(sp.range), from: one(sp.from), to: one(sp.to) });
   const stats = await getOrderStats(user.id, range);
-  const money = (v: number) => formatPrice(v, stats.currency);
+  const money = (v: number) => <Money amount={v} currency={stats.currency} variant="stack" />;
   const empty = stats.total === 0 && stats.deposits === 0 && stats.payments.paid + stats.payments.pending + stats.payments.unpaid === 0;
   // The chart shows at most 62 days; longer ranges show their last 62.
   const chartStart = Date.parse(`${stats.byDay[0].date}T00:00:00Z`);
@@ -47,7 +48,7 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
             icon="checkCircle"
             label="Successful payments"
             value={String(stats.payments.paid)}
-            hint={stats.payments.paid ? `${money(stats.payments.paidAmount)} added` : stats.payments.pending ? `${stats.payments.pending} awaiting payment` : undefined}
+            hint={stats.payments.paid ? `${formatPrice(stats.payments.paidAmount, stats.currency)} added` : stats.payments.pending ? `${stats.payments.pending} awaiting payment` : undefined}
           />
           <StatCard icon="wallet" label="Current balance" value={money(stats.balance)} />
         </div>
@@ -87,7 +88,7 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
                     <Tr key={s.name}>
                       <Td>
                         <span className="flex items-center gap-2 font-medium">
-                          <ServiceAvatar name={s.name} color={s.color} size={22} />
+                          <ServiceAvatar name={s.name} color={s.color} logo={s.logo} size={22} />
                           <span className="max-w-44 truncate">{s.name}</span>
                         </span>
                       </Td>

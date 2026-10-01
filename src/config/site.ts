@@ -30,6 +30,7 @@ export type NavGroup = {
 /** Top white header bar. */
 export const mainNav: (NavItem | NavGroup)[] = [
   { label: "Price", href: "/price" },
+  { label: "Ready Made Accounts", href: "/accounts" },
   // { label: "API", href: "/api" },
   // { label: "FAQ", href: "/faq" },
   // { label: "Earn with us", href: "/earn-with-us" },

@@ -28,6 +28,7 @@ Without `GRIZZLY_API_KEY` the site runs but shows "numbers coming soon" states: 
 | `wallet:adjust` | Staff-only credit/debit: `npm run wallet:adjust -- --email a@b.c --amount 10 --reason "Top-up #42"` |
 | `payments:reconcile` | Re-check open/recent top-ups with the payment provider (late webhooks, closed browsers) — **run every few minutes from cron** |
 | `db:seed:admin` | **Admin seeder** — creates/repairs the administrator from `ADMIN_EMAIL` (default zh613781@gmail.com). Uses `ADMIN_PASSWORD` if set, otherwise emails a password-setup link. Idempotent and production-safe; never overwrites an existing password unless `ADMIN_RESET_PASSWORD=true` |
+| `db:seed:ready-made` | Creates the default **Ready Made** offer (WhatsApp · All countries · active) at `READY_MADE_DEFAULT_PRICE`, only if it doesn't exist; never changes an existing offer. Offers are managed in Admin → Ready Made Accounts |
 | `admin:role` | Grant/revoke admin rights, or create the admin account: `npm run admin:role -- --email you@example.com [--create] [--revoke]` |
 | `provider:check` | Read-only operator check: provider connectivity, **our provider balance**, catalog size |
 

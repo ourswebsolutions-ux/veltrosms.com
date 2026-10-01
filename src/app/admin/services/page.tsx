@@ -6,12 +6,15 @@ import { one, pageHref, pageParam } from "@/components/admin/AdminParts";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { formatPrice } from "@/lib/format";
+import { serviceLogo } from "@/lib/service-logos";
 import { adminCatalogToggleAction, adminServicePopularAction } from "@/server/actions/admin";
 import { requireAdminPage } from "@/server/admin/guard";
+import { serviceColor } from "@/server/catalog/service-hints";
 import { listAdminServices } from "@/server/admin/platform";
 
 export const metadata: Metadata = { title: "Services" };
@@ -50,7 +53,8 @@ export default async function AdminServicesPage({ searchParams }: PageProps<"/ad
           {
             header: "Service",
             cell: (s) => (
-              <Link href={`/admin/services/${s.id}`} className="font-medium hover:text-primary">
+              <Link href={`/admin/services/${s.id}`} className="inline-flex items-center gap-2 font-medium hover:text-primary">
+                <ServiceAvatar name={s.name} color={serviceColor(s.providerCode, s.name)} logo={serviceLogo(s.providerCode)} size={22} />
                 {s.name}
                 {s.isPopular && <Badge tone="warning" className="ml-1.5">Featured</Badge>}
               </Link>

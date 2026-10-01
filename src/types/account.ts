@@ -17,7 +17,7 @@ export const ACTIVE_ORDER_STATUSES: readonly OrderStatus[] = ["pending", "active
 
 export type OrderListItem = {
   id: string;
-  service: { slug: string; name: string; color: string };
+  service: { slug: string; name: string; color: string; logo: string | null };
   country: { id: string; iso2: string | null; name: string };
   phoneNumber: string | null;
   status: OrderStatus;
@@ -62,7 +62,7 @@ export type OrderDetail = { order: OrderListItem; ledger: OrderLedgerEntry[] };
 export type SmsHistoryItem = {
   id: string;
   orderId: string;
-  service: { name: string; color: string };
+  service: { name: string; color: string; logo: string | null };
   country: { iso2: string | null; name: string };
   phoneNumber: string | null;
   sender: string | null;
@@ -130,7 +130,7 @@ export type OrderStats = {
   currency: string;
   /** Orders per day (UTC) for the chart, oldest first; at most 62 days. */
   byDay: { date: string; total: number; completed: number }[];
-  byService: { name: string; color: string; total: number; completed: number; spent: number }[];
+  byService: { name: string; color: string; logo: string | null; total: number; completed: number; spent: number }[];
 };
 
 export type PaymentStatus = "pending" | "processing" | "paid" | "failed" | "cancelled" | "expired" | "refunded" | "rejected";

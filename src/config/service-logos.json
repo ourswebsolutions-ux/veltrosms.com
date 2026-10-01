@@ -1,0 +1,22 @@
+{
+  "wa": { "icon": "whatsapp", "brand": "WhatsApp" },
+  "tg": { "icon": "telegram", "brand": "Telegram" },
+  "fb": { "icon": "facebook", "brand": "Facebook" },
+  "ig": { "icon": "instagram", "brand": "Instagram" },
+  "lf": { "icon": "tiktok", "brand": "TikTok" },
+  "go": { "icon": "google", "brand": "Google" },
+  "ds": { "icon": "discord", "brand": "Discord" },
+  "ub": { "icon": "uber", "brand": "Uber" },
+  "tw": { "icon": "x", "brand": "X" },
+  "fu": { "icon": "snapchat", "brand": "Snapchat" },
+  "bnl": { "icon": "reddit", "brand": "Reddit" },
+  "wx": { "icon": "apple", "brand": "Apple" },
+  "mt": { "icon": "steam", "brand": "Steam" },
+  "ts": { "icon": "paypal", "brand": "PayPal" },
+  "aon": { "icon": "binance", "brand": "Binance" },
+  "nf": { "icon": "netflix", "brand": "Netflix" },
+  "vi": { "icon": "viber", "brand": "Viber" },
+  "wb": { "icon": "wechat", "brand": "WeChat" },
+  "dh": { "icon": "ebay", "brand": "eBay" },
+  "mm": { "icon": "microsoft", "brand": "Microsoft" }
+}

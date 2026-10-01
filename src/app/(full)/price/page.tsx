@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/DisplayCurrency";
 import { Icon } from "@/components/icons";
 import { PriceExplorer, type PriceMode } from "@/components/marketplace/PriceExplorer";
 import { ActiveOrdersList } from "@/components/orders/ActiveOrdersList";
@@ -7,7 +8,6 @@ import { Card } from "@/components/ui/Card";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
-import { formatPrice } from "@/lib/format";
 import { getCurrentUser } from "@/server/auth/session";
 import { getViewer } from "@/server/services/account.service";
 import { listActiveOrders } from "@/server/services/order.service";
@@ -62,7 +62,9 @@ export default async function PricePage({ searchParams }: PageProps<"/price">) {
             viewer.signedIn ? (
               <div className="flex items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pr-1 pl-3">
                 <span className="text-sm text-fg-muted">Balance</span>
-                <span className="font-semibold tabular-nums">{formatPrice(viewer.balance, viewer.currency)}</span>
+                <span className="font-semibold tabular-nums">
+                  <Money amount={viewer.balance} currency={viewer.currency} variant="both" />
+                </span>
                 <ButtonLink href="/profile/top-up" size="sm" variant="soft">
                   <Icon name="plus" size={16} /> Top up
                 </ButtonLink>

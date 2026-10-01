@@ -7,6 +7,7 @@ import { getProvider } from "@/server/providers/registry";
 import { getCatalogStatus, syncCatalog } from "@/server/services/catalog.service";
 import { customerPrice } from "@/server/services/currency";
 import { setPricingRules, type PricingRules } from "@/server/services/pricing-rules";
+import { repriceCustomMargins } from "./margins";
 import { checkProviderHealth, invalidateProviderBalance } from "@/server/services/provider-health.service";
 import { maskAddress } from "@/server/services/security-log";
 import { getSetting, saveSetting, whatsappDigits, type MaintenanceSetting, type ManualPaymentSetting } from "@/server/services/settings.service";
@@ -422,6 +423,8 @@ async function repriceAll(rules: PricingRules): Promise<number> {
     );
     updated += results.reduce((n, r) => n + r.count, 0);
   }
+  // Service + country exceptions (Admin → Custom Margins) keep their own minimum margin.
+  await repriceCustomMargins(rules);
   return updated;
 }
 

@@ -11,3 +11,18 @@ export function whatsappHref(details: Pick<ManualPaymentDetails, "whatsappDigits
   ];
   return `https://wa.me/${details.whatsappDigits}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
+
+/** wa.me link for receiving a Ready Made purchase, prefilled with the order details. Safe on server and client. */
+export function readyMadeWhatsappHref(
+  whatsappDigits: string,
+  order: { reference: string; service: string; country: string | null; email?: string },
+) {
+  const lines = [
+    `Hello, I purchased a Ready Made account on ${siteConfig.name} and would like to receive it.`,
+    `Order: ${order.reference}`,
+    `Service: ${order.service}`,
+    `Country: ${order.country ?? "All countries"}`,
+    ...(order.email ? [`Email: ${order.email}`] : []),
+  ];
+  return `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
