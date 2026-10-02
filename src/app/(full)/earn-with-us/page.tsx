@@ -37,7 +37,7 @@ export default async function EarnWithUsPage() {
 
       <Card className="sm:!p-10">
         <h2 className="mb-6 text-2xl font-semibold sm:text-[28px]">{t("earn.advantages", { name: siteConfig.name })}</h2>
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           <FeatureCard icon="zap" title={t("earn.simpleStart")}>
             {t("earn.simpleStartBody")}
           </FeatureCard>
@@ -52,7 +52,7 @@ export default async function EarnWithUsPage() {
 
       <section>
         <h2 className="mb-5 text-2xl font-semibold sm:text-[28px]">{t("earn.needTitle")}</h2>
-        <ol className="grid gap-5 md:grid-cols-3">
+        <ol className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {STEPS.map((step, i) => (
             <li key={step.title} className="rounded-[var(--radius-card)] border border-primary bg-primary-tint p-6 sm:p-8">
               <p className="text-sm font-semibold text-fg-muted">{t("earn.stepN", { n: i + 1 })}</p>

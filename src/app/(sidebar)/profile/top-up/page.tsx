@@ -61,7 +61,7 @@ export default async function TopUpPage() {
             action={<ButtonLink href="/price" variant="outline">{t("topup.browseNumbers")}</ButtonLink>}
           />
         ) : manual ? (
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
             <section aria-labelledby="manual-payment" className="space-y-4">
               <div>
                 <h2 id="manual-payment" className="text-[15px] font-semibold">

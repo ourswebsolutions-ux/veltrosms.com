@@ -47,9 +47,9 @@ async function setup() {
   const whatsapp = await db().service.create({ data: { provider: "fake", providerCode: "wa", slug: "wa", name: "Whatsapp" } });
   const telegram = await db().service.create({ data: { provider: "fake", providerCode: "tg", slug: "tg", name: "Telegram" } });
   const pk = await db().country.create({ data: { provider: "fake", providerCode: "66", name: "Pakistan", iso2: "pk" } });
-  await createReadyMadeOffer(a, { serviceId: whatsapp.id, countryId: null, price: "2.50", isActive: true });
-  await createReadyMadeOffer(a, { serviceId: whatsapp.id, countryId: pk.id, price: "3", isActive: true });
-  await createReadyMadeOffer(a, { serviceId: telegram.id, countryId: null, price: "1", isActive: false });
+  await createReadyMadeOffer(a, { serviceId: whatsapp.id, countryId: null, price: "2.50", availableQuantity: "100", isActive: true });
+  await createReadyMadeOffer(a, { serviceId: whatsapp.id, countryId: pk.id, price: "3", availableQuantity: "100", isActive: true });
+  await createReadyMadeOffer(a, { serviceId: telegram.id, countryId: null, price: "1", availableQuantity: "100", isActive: false });
   const offers = await db().readyMadeOffer.findMany({ orderBy: { id: "asc" } });
   return { a, whatsapp, telegram, pk, waAll: offers[0], waPk: offers[1], tgAll: offers[2] };
 }
@@ -122,7 +122,7 @@ describe("Ready Made Accounts — customer side", () => {
     const s = await setup();
     const u = await buyer(10);
     expect(await buy(u.id, s.waAll.id, USD(0.01))).toMatchObject({ ok: false, code: "PRICE_CHANGED", price: USD(2.5) });
-    await updateReadyMadeOffer(s.a, s.waAll.id, { serviceId: s.whatsapp.id, countryId: null, price: "4", isActive: true });
+    await updateReadyMadeOffer(s.a, s.waAll.id, { serviceId: s.whatsapp.id, countryId: null, price: "4", availableQuantity: "100", isActive: true });
     expect(await buy(u.id, s.waAll.id, USD(2.5))).toMatchObject({ ok: false, code: "PRICE_CHANGED", price: USD(4) });
     expect((await getBalance(u.id)).balance).toBe(USD(10));
     expect(await buy(u.id, s.waAll.id, USD(4))).toMatchObject({ ok: true });
@@ -212,5 +212,76 @@ describe("Ready Made Accounts — customer side", () => {
     const text = decodeURIComponent(href.split("text=")[1]);
     expect(text).toContain("Order: RM-ABCDEFGH");
     expect(text).toContain("Country: All countries");
+  });
+});
+
+describe("Ready Made Accounts — available quantity", () => {
+  const setQuantity = (a: AdminActor, offer: { id: number; serviceId: number; countryId: number | null }, quantity: string) =>
+    updateReadyMadeOffer(a, offer.id, { serviceId: offer.serviceId, countryId: offer.countryId, price: "2.50", availableQuantity: quantity, isActive: true });
+
+  it("admin sets the quantity; customers see it; each purchase takes exactly one", async () => {
+    const s = await setup();
+    expect(await setQuantity(s.a, s.waAll, "10")).toMatchObject({ ok: true });
+    expect((await listReadyMadeOffers()).find((o) => o.id === s.waAll.id)?.available).toBe(10);
+
+    const u = await buyer(10);
+    expect(await buy(u.id, s.waAll.id, USD(2.5))).toMatchObject({ ok: true });
+    expect((await listReadyMadeOffers()).find((o) => o.id === s.waAll.id)?.available).toBe(9);
+    expect(providerCalls).toEqual([]);
+  });
+
+  it("an idempotent retry does not take a second account", async () => {
+    const s = await setup();
+    await setQuantity(s.a, s.waAll, "5");
+    const u = await buyer(10);
+    const k = key();
+    await buy(u.id, s.waAll.id, USD(2.5), k);
+    await buy(u.id, s.waAll.id, USD(2.5), k);
+    expect((await db().readyMadeOffer.findUniqueOrThrow({ where: { id: s.waAll.id } })).availableQuantity).toBe(4);
+  });
+
+  it("at 0 the purchase is refused server-side: no charge, no order, no provider call", async () => {
+    const s = await setup();
+    await setQuantity(s.a, s.waAll, "0");
+    expect((await listReadyMadeOffers()).find((o) => o.id === s.waAll.id)?.available).toBe(0);
+    const u = await buyer(10);
+    expect(await buy(u.id, s.waAll.id, USD(2.5))).toMatchObject({ ok: false, code: "OUT_OF_STOCK" });
+    expect((await getBalance(u.id)).balance).toBe(USD(10));
+    expect(await db().readyMadeOrder.count()).toBe(0);
+    expect(await db().transaction.count({ where: { userId: u.id, type: "PURCHASE" } })).toBe(0);
+    expect(providerCalls).toEqual([]);
+  });
+
+  it("concurrent buyers can never oversell: exactly `quantity` succeed and it stops at 0", async () => {
+    const s = await setup();
+    await setQuantity(s.a, s.waAll, "3");
+    const buyers = await Promise.all(Array.from({ length: 8 }, () => buyer(10)));
+    const results = await Promise.all(buyers.map((u) => buy(u.id, s.waAll.id, USD(2.5))));
+    expect(results.filter((r) => r.ok)).toHaveLength(3);
+    expect(results.filter((r) => !r.ok).every((r) => !r.ok && r.code === "OUT_OF_STOCK")).toBe(true);
+    expect((await db().readyMadeOffer.findUniqueOrThrow({ where: { id: s.waAll.id } })).availableQuantity).toBe(0);
+    expect(await db().readyMadeOrder.count()).toBe(3);
+    // Only the 3 buyers who got an account were charged.
+    const balances = await Promise.all(buyers.map(async (u) => (await getBalance(u.id)).balance));
+    expect(balances.filter((b) => b === USD(7.5))).toHaveLength(3);
+    expect(balances.filter((b) => b === USD(10))).toHaveLength(5);
+  });
+
+  it("a failed purchase (not enough balance) gives the account back", async () => {
+    const s = await setup();
+    await setQuantity(s.a, s.waAll, "2");
+    const poor = await buyer(1);
+    expect(await buy(poor.id, s.waAll.id, USD(2.5))).toMatchObject({ ok: false, code: "INSUFFICIENT_FUNDS" });
+    expect((await db().readyMadeOffer.findUniqueOrThrow({ where: { id: s.waAll.id } })).availableQuantity).toBe(2);
+  });
+
+  it("admin validation: whole numbers from 0 to 100,000; the database never allows negatives", async () => {
+    const s = await setup();
+    for (const bad of ["-1", "1.5", "abc", "", "100001"]) expect(await setQuantity(s.a, s.waAll, bad)).toMatchObject({ ok: false });
+    expect(await setQuantity(s.a, s.waAll, "25")).toMatchObject({ ok: true });
+    expect(await setQuantity(s.a, s.waAll, "24")).toMatchObject({ ok: true }); // decrease
+    expect(await setQuantity(s.a, s.waAll, "30")).toMatchObject({ ok: true }); // increase
+    await expect(db().readyMadeOffer.update({ where: { id: s.waAll.id }, data: { availableQuantity: -1 } })).rejects.toThrow();
+    expect((await db().readyMadeOffer.findUniqueOrThrow({ where: { id: s.waAll.id } })).availableQuantity).toBe(30);
   });
 });

@@ -145,7 +145,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/profile/
       <DateRangeFilter range={range} basePath="/profile/history" keep={keep} showCustom={false} className="mb-3" />
 
       {/* Plain GET form: filtering works without JavaScript and URLs are shareable. */}
-      <form method="get" action="/profile/history" className="mb-5 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4" aria-label={t("history.filter")}>
+      <form method="get" action="/profile/history" className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-4" aria-label={t("history.filter")}>
         {tab !== "transactions" && <input type="hidden" name="tab" value={tab} />}
         {tab === "sms" ? (
           <>

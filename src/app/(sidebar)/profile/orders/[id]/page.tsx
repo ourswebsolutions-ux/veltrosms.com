@@ -88,7 +88,7 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
           }
         />
         {live && <NumberCard order={order} className="mb-5" />}
-        <dl className="grid gap-x-6 gap-y-3 rounded-xl bg-surface-muted p-4 text-[15px] sm:grid-cols-[160px_minmax(0,1fr)]">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-xl bg-surface-muted p-4 text-[15px] sm:grid-cols-[160px_minmax(0,1fr)]">
           {rows.map(([label, value]) => (
             <div key={label} className="contents">
               <dt className="text-fg-muted">{label}</dt>

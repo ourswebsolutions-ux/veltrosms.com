@@ -61,7 +61,7 @@ export default async function AdminAuditLogsPage({ searchParams }: PageProps<"/a
       ) : (
         <ul className="divide-y divide-line text-sm">
           {data.items.map((r) => (
-            <li key={r.id} className="grid gap-1 py-3 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-3">
+            <li key={r.id} className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-3">
               <time className="text-xs text-fg-subtle tabular-nums" dateTime={r.createdAt}>
                 {formatDateTime(r.createdAt)}
               </time>

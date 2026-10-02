@@ -19,7 +19,7 @@ export default async function ApiPage() {
     <PageContainer className="space-y-6">
       <h1 className="pt-2 text-3xl font-semibold tracking-tight">{siteConfig.name} API</h1>
 
-      <Card className="grid gap-6 lg:grid-cols-[1fr_auto] lg:!p-6">
+      <Card className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:!p-6">
         <div className="space-y-2 text-[17px] leading-relaxed lg:border-e lg:border-line lg:pe-8">
           <p>{t("api.intro")}</p>
           <p className="text-primary">{t("api.auth")}</p>

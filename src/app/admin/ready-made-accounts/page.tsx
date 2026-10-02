@@ -18,7 +18,8 @@ export const metadata: Metadata = { title: "Ready Made Accounts" };
 
 /**
  * Which services (and countries) are sold as Ready Made accounts, at which
- * admin-set price. Configuration only — customer purchases come in a later phase.
+ * admin-set price, and how many accounts are in hand for each (a purchase
+ * takes one; at 0 the offer shows as out of stock and can't be bought).
  */
 export default async function AdminReadyMadePage() {
   await requireAdminPage("/admin/ready-made-accounts");
@@ -36,7 +37,7 @@ export default async function AdminReadyMadePage() {
           services={options.services}
           countries={options.countries}
           currency={options.currency}
-          initial={{ serviceId: options.defaultServiceId, countryId: null, price: "", isActive: true }}
+          initial={{ serviceId: options.defaultServiceId, countryId: null, price: "", availableQuantity: "", isActive: true }}
           submitLabel="Add offer"
         />
       </Card>
@@ -74,6 +75,16 @@ export default async function AdminReadyMadePage() {
                 ),
             },
             { header: "Price", className: "text-end tabular-nums font-medium", cell: (o) => formatPrice(o.price, o.currency) },
+            {
+              header: "Available",
+              className: "text-end tabular-nums",
+              cell: (o) =>
+                o.availableQuantity > 0 ? (
+                  <span className="font-medium">{o.availableQuantity.toLocaleString("en-US")}</span>
+                ) : (
+                  <Badge tone="danger">Out of stock</Badge>
+                ),
+            },
             { header: "Currency", className: "ps-6", desktopOnly: true, cell: (o) => o.currency },
             { header: "Status", cell: (o) => (o.isActive ? <Badge tone="success">Active</Badge> : <Badge tone="neutral">Disabled</Badge>) },
             { header: "Updated", className: "whitespace-nowrap text-fg-muted", desktopOnly: true, cell: (o) => formatShortDateTime(o.updatedAt) },

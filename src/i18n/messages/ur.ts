@@ -923,4 +923,12 @@ export const ur: Messages = {
   "srv.ledger.topupMethod": "بیلنس شامل کیا گیا · {method} · {ref}",
   "srv.ledger.gatewayTopup": "{name} بیلنس شمولیت {ref}",
   "srv.allCountries": "تمام ممالک",
+  /* server messages: signup */
+  "srv.auth.emailTaken": "اس ای میل سے ایک اکاؤنٹ پہلے سے موجود ہے۔ اس کے بجائے لاگ ان کریں۔",
+  /* ready made: quantity */
+  "rm.availableLabel": "دستیاب",
+  "rm.availableOne": "1 اکاؤنٹ دستیاب",
+  "rm.availableMany": "{count} اکاؤنٹس دستیاب",
+  "rm.outOfStock": "اسٹاک ختم",
+  "srv.ready.outOfStock": "یہ ریڈی میڈ اکاؤنٹ اسٹاک میں نہیں ہے۔ آپ سے کوئی رقم نہیں لی گئی۔",
 };

@@ -149,7 +149,7 @@ export function TopUpForm({ options, balance }: { options: TopUpOptions; balance
 
       <fieldset>
         <legend className="mb-2.5 text-[15px] font-semibold">{t("topup.method")}</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {options.methods.map((m) => (
             <label
               key={m.id}

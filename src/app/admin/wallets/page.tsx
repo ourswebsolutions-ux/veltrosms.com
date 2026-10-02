@@ -36,7 +36,7 @@ export default async function AdminWalletsPage({ searchParams }: PageProps<"/adm
             </ButtonLink>
           }
         />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <Stat icon="wallet" label="All balances" value={money(d.money.walletBalances)} />
           <Stat icon="plus" label="Deposits (all time)" value={money(d.money.deposits)} />
           <Stat icon="chart" label="Purchases" value={money(d.money.purchases)} />

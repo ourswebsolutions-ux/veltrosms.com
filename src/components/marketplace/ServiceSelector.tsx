@@ -114,7 +114,8 @@ function ServiceGrid({
                   )}
                 >
                   <ServiceAvatar name={s.name} color={s.color} logo={s.logo} size={30} />
-                  <span dir="auto" className="truncate rtl:text-right">
+                  {/* Two lines before an ellipsis, so combined names ("Google, Gmail, Youtube") stay readable. */}
+                  <span dir="auto" title={s.name} className="line-clamp-2 min-w-0 text-[15px] leading-tight wrap-anywhere rtl:text-right">
                     {s.name}
                   </span>
                 </button>

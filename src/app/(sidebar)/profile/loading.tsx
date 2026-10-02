@@ -8,7 +8,7 @@ export default async function ProfileLoading() {
     <Card className="space-y-4" aria-busy="true" aria-label={t("common.loading")}>
       <Skeleton className="h-8 w-1/3" />
       <Skeleton className="h-4 w-1/2" />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Skeleton className="h-20" />
         <Skeleton className="h-20" />
       </div>

@@ -27,7 +27,7 @@ export function Stat({ icon, label, value, hint, tone }: { icon: IconName; label
 /** Label/value grid for detail pages. */
 export function KeyValues({ rows }: { rows: [string, ReactNode][] }) {
   return (
-    <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[170px_minmax(0,1fr)]">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-[170px_minmax(0,1fr)]">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-fg-muted">{k}</dt>

@@ -46,8 +46,8 @@ describe("Ready Made offers — admin configuration", () => {
   it("creates All-countries and per-country offers with an admin price, audited", async () => {
     const a = await admin();
     const c = await catalog();
-    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "2.50", isActive: true })).toMatchObject({ ok: true });
-    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "3", isActive: false })).toMatchObject({ ok: true });
+    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "2.50", availableQuantity: "100", isActive: true })).toMatchObject({ ok: true });
+    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "3", availableQuantity: "100", isActive: false })).toMatchObject({ ok: true });
     const rows = await listReadyMadeOffers();
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({ country: null, price: USD(2.5), currency: "USD", isActive: true });
@@ -58,15 +58,15 @@ describe("Ready Made offers — admin configuration", () => {
   it("prevents duplicate service/country offers, including All countries", async () => {
     const a = await admin();
     const c = await catalog();
-    await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "1", isActive: true });
-    await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "1", isActive: true });
-    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "5", isActive: true })).toMatchObject({ ok: false });
-    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "5", isActive: true })).toMatchObject({ ok: false });
+    await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "1", availableQuantity: "100", isActive: true });
+    await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "1", availableQuantity: "100", isActive: true });
+    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "5", availableQuantity: "100", isActive: true })).toMatchObject({ ok: false });
+    expect(await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "5", availableQuantity: "100", isActive: true })).toMatchObject({ ok: false });
     // The same country for another service is fine.
-    expect(await createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: null, price: "1", isActive: true })).toMatchObject({ ok: true });
+    expect(await createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: null, price: "1", availableQuantity: "100", isActive: true })).toMatchObject({ ok: true });
     // Concurrent creates: the unique index lets exactly one through.
     const results = await Promise.all(
-      Array.from({ length: 4 }, () => createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: c.pakistan.id, price: "1", isActive: true })),
+      Array.from({ length: 4 }, () => createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: c.pakistan.id, price: "1", availableQuantity: "100", isActive: true })),
     );
     expect(results.filter((r) => r.ok)).toHaveLength(1);
     expect(await db().readyMadeOffer.count()).toBe(4);
@@ -75,7 +75,7 @@ describe("Ready Made offers — admin configuration", () => {
   it("validates input on the server", async () => {
     const a = await admin();
     const c = await catalog();
-    const base = { serviceId: c.whatsapp.id, countryId: null, isActive: true };
+    const base = { serviceId: c.whatsapp.id, countryId: null, availableQuantity: "100", isActive: true };
     for (const price of ["0", "-1", "abc", "", "1.23456", "100001"]) {
       expect(await createReadyMadeOffer(a, { ...base, price })).toMatchObject({ ok: false });
     }
@@ -88,18 +88,18 @@ describe("Ready Made offers — admin configuration", () => {
   it("edits, enables/disables and deletes offers, each audited", async () => {
     const a = await admin();
     const c = await catalog();
-    await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "1", isActive: true });
-    await createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: null, price: "1", isActive: true });
+    await createReadyMadeOffer(a, { serviceId: c.whatsapp.id, countryId: null, price: "1", availableQuantity: "100", isActive: true });
+    await createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: null, price: "1", availableQuantity: "100", isActive: true });
     const [wa, tg] = await db().readyMadeOffer.findMany({ orderBy: { id: "asc" } });
 
-    expect(await updateReadyMadeOffer(a, wa.id, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "4.20", isActive: true })).toMatchObject({ ok: true });
+    expect(await updateReadyMadeOffer(a, wa.id, { serviceId: c.whatsapp.id, countryId: c.pakistan.id, price: "4.20", availableQuantity: "100", isActive: true })).toMatchObject({ ok: true });
     const updated = await db().readyMadeOffer.findUniqueOrThrow({ where: { id: wa.id } });
     expect(updated).toMatchObject({ countryId: c.pakistan.id, countryKey: c.pakistan.id });
     expect(updated.price.toString()).toBe("4.2");
     // Moving Telegram onto an existing (service, country) pair is refused.
-    await createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: c.pakistan.id, price: "1", isActive: true });
-    expect(await updateReadyMadeOffer(a, tg.id, { serviceId: c.telegram.id, countryId: c.pakistan.id, price: "1", isActive: true })).toMatchObject({ ok: false });
-    expect(await updateReadyMadeOffer(a, 999_999, { serviceId: c.telegram.id, countryId: null, price: "1", isActive: true })).toMatchObject({ ok: false });
+    await createReadyMadeOffer(a, { serviceId: c.telegram.id, countryId: c.pakistan.id, price: "1", availableQuantity: "100", isActive: true });
+    expect(await updateReadyMadeOffer(a, tg.id, { serviceId: c.telegram.id, countryId: c.pakistan.id, price: "1", availableQuantity: "100", isActive: true })).toMatchObject({ ok: false });
+    expect(await updateReadyMadeOffer(a, 999_999, { serviceId: c.telegram.id, countryId: null, price: "1", availableQuantity: "100", isActive: true })).toMatchObject({ ok: false });
 
     expect(await setReadyMadeOfferActive(a, wa.id, false)).toMatchObject({ ok: true });
     expect((await db().readyMadeOffer.findUniqueOrThrow({ where: { id: wa.id } })).isActive).toBe(false);

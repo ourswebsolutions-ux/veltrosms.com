@@ -596,20 +596,24 @@ model AuditLog {
  * Independent of provider prices and of provider-synced data.
  */
 model ReadyMadeOffer {
-  id         Int      @id @default(autoincrement())
-  serviceId  Int      @map("service_id")
+  id                Int      @id @default(autoincrement())
+  serviceId         Int      @map("service_id")
   /// A specific country, or null for "All countries".
-  countryId  Int?     @map("country_id")
+  countryId         Int?     @map("country_id")
   /// countryId, or 0 for "All countries". Makes (service, country) unique even for
   /// All (MySQL allows repeated NULLs in a unique index); a CHECK constraint keeps
   /// it equal to COALESCE(country_id, 0).
-  countryKey Int      @default(0) @map("country_key")
+  countryKey        Int      @default(0) @map("country_key")
   /// Customer price set by an administrator, in currency.
-  price      Decimal  @db.Decimal(18, 4)
-  currency   String   @db.Char(3)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  price             Decimal  @db.Decimal(18, 4)
+  currency          String   @db.Char(3)
+  isActive          Boolean  @default(true) @map("is_active")
+  /// Ready Made accounts in hand for manual delivery (admin-set). Each purchase
+  /// takes one, atomically; 0 = out of stock. Never provider stock. A CHECK
+  /// constraint keeps it >= 0.
+  availableQuantity Int      @default(0) @map("available_quantity")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   service Service          @relation(fields: [serviceId], references: [id], onDelete: Restrict)
   country Country?         @relation(fields: [countryId], references: [id], onDelete: Restrict)

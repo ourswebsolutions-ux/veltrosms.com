@@ -45,7 +45,7 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
       <Card>
         <PageHeader title={t("stats.title")} description={t("stats.intro", { range: rangeLabel })} />
         <DateRangeFilter range={range} basePath="/profile/statistics" className="mb-5" />
-        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
           <StatCard
             icon="phone"
             label={t("stats.ordered")}

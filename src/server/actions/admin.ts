@@ -236,6 +236,7 @@ function readyMadeInput(data: FormData): ReadyMadeOfferInput | null {
     serviceId: serviceId.data,
     countryId: countryId === null ? null : countryId.data,
     price: field(data, "price").trim().slice(0, 20),
+    availableQuantity: field(data, "availableQuantity").trim().slice(0, 12),
     isActive: data.get("isActive") === "on",
   };
 }

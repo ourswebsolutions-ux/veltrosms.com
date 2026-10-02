@@ -62,7 +62,7 @@ export default async function PricePage({ searchParams }: PageProps<"/price">) {
           description={t("price.intro")}
           actions={
             viewer.signedIn ? (
-              <div className="flex items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pe-1 ps-3">
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pe-1 ps-3">
                 <span className="text-sm text-fg-muted">{t("common.balance")}</span>
                 <span className="font-semibold tabular-nums">
                   <Money amount={viewer.balance} currency={viewer.currency} variant="both" />

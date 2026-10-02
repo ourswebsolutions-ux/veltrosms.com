@@ -45,7 +45,6 @@ export default async function ProfilePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-xl font-semibold">{p.name}</h1>
                 <Badge tone={p.status === "active" ? "success" : "danger"}>{p.status === "active" ? t("profile.active") : t("profile.suspended")}</Badge>
-                {!p.emailVerified && <Badge tone="warning">{t("auth.notConfirmed")}</Badge>}
               </div>
               <p className="truncate text-[15px] text-fg-muted">
                 <bdi>{p.email}</bdi>
@@ -59,7 +58,7 @@ export default async function ProfilePage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 rounded-xl border border-line bg-surface-muted/60 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface-muted/60 px-4 py-3">
             <div>
               <p className="text-[13px] text-fg-muted">{t("common.balance")}</p>
               <p className="text-2xl font-semibold tabular-nums">

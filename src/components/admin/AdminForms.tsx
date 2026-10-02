@@ -216,7 +216,7 @@ export function EditUserForm({ action, userId, name, email }: { action: Action; 
   return (
     <form action={run} className="space-y-3">
       <input type="hidden" name="userId" value={userId} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Name" required>
           {(p) => <Input {...p} name="name" defaultValue={name} maxLength={100} />}
         </Field>
@@ -274,7 +274,7 @@ export function WalletAdjustForm({ action, userId, currency, balance, email }: {
           </button>
         ))}
       </div>
-      <div className="grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
         <Field label={`Amount (${currency})`} required error={state.fieldErrors?.amount}>
           {(p) => <Input {...p} name="amount" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="5.00" autoComplete="off" />}
         </Field>
@@ -336,7 +336,7 @@ export function PricingForm({ action, markupPercent, minMargin, currency }: { ac
   const formRef = useRef<HTMLFormElement>(null);
   return (
     <form ref={formRef} action={run} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Markup (%)" hint="Added on top of the provider cost (0–500)">
           {(p) => <Input {...p} name="markupPercent" inputMode="decimal" defaultValue={markupPercent} />}
         </Field>
@@ -415,7 +415,7 @@ export function ManualPaymentForm({
   const formRef = useRef<HTMLFormElement>(null);
   return (
     <form ref={formRef} action={run} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Account name" required>
           {(p) => <Input {...p} name="accountName" defaultValue={accountName} maxLength={80} />}
         </Field>
@@ -512,7 +512,8 @@ export function TopUpReviewForms({ approve, reject, paymentId, summary }: { appr
 
 /**
  * Create or edit a Ready Made offer: service, country (or All countries),
- * admin-set price and status. Every value is validated again on the server.
+ * admin-set price, available quantity and status. Every value is validated
+ * again on the server.
  */
 export function ReadyMadeOfferForm({
   action,
@@ -526,7 +527,7 @@ export function ReadyMadeOfferForm({
   services: { id: number; name: string }[];
   countries: { id: number; name: string }[];
   currency: string;
-  initial: { id?: number; serviceId: number | null; countryId: number | null; price: string; isActive: boolean };
+  initial: { id?: number; serviceId: number | null; countryId: number | null; price: string; availableQuantity: string; isActive: boolean };
   submitLabel: string;
 }) {
   const [state, run] = useFormAction(action);
@@ -540,7 +541,7 @@ export function ReadyMadeOfferForm({
       {initial.id !== undefined && <input type="hidden" name="id" value={initial.id} />}
       <input type="hidden" name="serviceId" value={serviceId} />
       <input type="hidden" name="countryId" value={countryId} />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <span className="text-sm text-fg">
             Service<span className="ms-0.5 text-primary">*</span>
@@ -554,10 +555,21 @@ export function ReadyMadeOfferForm({
           <Combobox label="Country" options={countryOptions} value={countryId} onChange={setCountryId} searchPlaceholder="Search countries" />
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={`Price (${currency})`} required hint="What the customer pays for one Ready Made account. Independent of provider prices.">
           {(p) => <Input {...p} name="price" inputMode="decimal" placeholder="e.g. 2.50" defaultValue={initial.price} maxLength={20} required />}
         </Field>
+        <Field
+          label="Available quantity"
+          required
+          hint="Ready Made accounts you have in hand for this service and country. Each purchase takes one; at 0 customers see it as out of stock."
+        >
+          {(p) => (
+            <Input {...p} name="availableQuantity" type="number" inputMode="numeric" min={0} max={100000} step={1} placeholder="e.g. 25" defaultValue={initial.availableQuantity} required />
+          )}
+        </Field>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex items-end pb-3">
           <Checkbox name="isActive" defaultChecked={initial.isActive} label="Active (offered to customers once Ready Made purchases are live)" />
         </div>

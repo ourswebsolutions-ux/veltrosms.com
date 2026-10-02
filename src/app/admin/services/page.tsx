@@ -53,7 +53,7 @@ export default async function AdminServicesPage({ searchParams }: PageProps<"/ad
           {
             header: "Service",
             cell: (s) => (
-              <Link href={`/admin/services/${s.id}`} className="inline-flex items-center gap-2 font-medium hover:text-primary">
+              <Link href={`/admin/services/${s.id}`} className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 font-medium hover:text-primary">
                 <ServiceAvatar name={s.name} color={serviceColor(s.providerCode, s.name)} logo={serviceLogo(s.providerCode)} size={22} />
                 {s.name}
                 {s.isPopular && <Badge tone="warning" className="ms-1.5">Featured</Badge>}

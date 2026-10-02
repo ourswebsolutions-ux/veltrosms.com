@@ -9,6 +9,9 @@ type TabItem<T extends string> = { value: T; label: string };
 const shell = "inline-flex rounded-xl border border-line bg-surface-muted p-1";
 const tab =
   "rounded-lg px-4 py-2 text-[15px] font-medium transition-colors whitespace-nowrap sm:px-5 sm:text-base";
+/** Segmented control on phones: fills the row and long (translated) labels wrap instead of overflowing. */
+const segmentShell = "flex w-full sm:inline-flex sm:w-auto";
+const segmentTab = "min-w-0 px-2 leading-tight whitespace-normal sm:whitespace-nowrap";
 const active = "bg-primary text-white shadow-sm";
 const inactive = "text-fg-muted hover:text-fg";
 
@@ -39,7 +42,7 @@ export function SegmentedTabs<T extends string>({
   }
 
   return (
-    <div role="tablist" aria-label={label} className={cn(shell, className)}>
+    <div role="tablist" aria-label={label} className={cn(shell, segmentShell, className)}>
       {items.map((item, i) => {
         const selected = item.value === value;
         return (
@@ -54,7 +57,7 @@ export function SegmentedTabs<T extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(item.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
-            className={cn(tab, "flex-1", selected ? active : inactive)}
+            className={cn(tab, segmentTab, "flex-1", selected ? active : inactive)}
           >
             {item.label}
           </button>

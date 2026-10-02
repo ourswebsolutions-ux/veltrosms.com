@@ -20,12 +20,16 @@ import type { AdminResult } from "./users";
 const DEFAULT_SERVICE_CODE = "wa";
 /** Upper bound for an admin-entered price, in units of the platform currency. */
 const MAX_PRICE_UNITS = 100_000;
+/** Upper bound for the available quantity of one offer. */
+const MAX_QUANTITY = 100_000;
 
 export type ReadyMadeOfferInput = {
   serviceId: number;
   /** null = All countries. */
   countryId: number | null;
   price: string;
+  /** Ready Made accounts in hand for this offer (whole number, 0 = out of stock). */
+  availableQuantity: string;
   isActive: boolean;
 };
 
@@ -36,6 +40,7 @@ export type ReadyMadeOfferRow = {
   price: number;
   currency: string;
   isActive: boolean;
+  availableQuantity: number;
   updatedAt: string;
 };
 
@@ -49,6 +54,7 @@ type OfferRecord = {
   price: { toString(): string };
   currency: string;
   isActive: boolean;
+  availableQuantity: number;
   updatedAt: Date;
   service: ReadyMadeOfferRow["service"];
   country: ReadyMadeOfferRow["country"];
@@ -61,6 +67,7 @@ const toRow = (o: OfferRecord): ReadyMadeOfferRow => ({
   price: toMinor(o.price),
   currency: o.currency,
   isActive: o.isActive,
+  availableQuantity: o.availableQuantity,
   updatedAt: o.updatedAt.toISOString(),
 });
 
@@ -107,7 +114,9 @@ export async function readyMadeFormOptions(current?: { serviceId: number; countr
   };
 }
 
-type Checked = { ok: false; message: string } | { ok: true; serviceId: number; countryId: number | null; price: number; isActive: boolean };
+type Checked =
+  | { ok: false; message: string }
+  | { ok: true; serviceId: number; countryId: number | null; price: number; availableQuantity: number; isActive: boolean };
 
 /** Server-side validation of an admin's input. Ids must exist; the price is exact (no floats). */
 async function check(input: ReadyMadeOfferInput): Promise<Checked> {
@@ -120,7 +129,11 @@ async function check(input: ReadyMadeOfferInput): Promise<Checked> {
   const price = parseAmount(input.price.replace(",", "."));
   if (price === null || price <= 0) return { ok: false, message: "Enter a positive price like 2.50 (up to 4 decimals)." };
   if (price > MAX_PRICE_UNITS * 10_000) return { ok: false, message: `The price can be at most ${MAX_PRICE_UNITS.toLocaleString("en-US")}.` };
-  return { ok: true, serviceId: input.serviceId, countryId: input.countryId, price, isActive: input.isActive };
+  const quantityText = input.availableQuantity.trim();
+  if (!/^\d{1,6}$/.test(quantityText) || Number(quantityText) > MAX_QUANTITY) {
+    return { ok: false, message: `Enter the available quantity as a whole number from 0 to ${MAX_QUANTITY.toLocaleString("en-US")}.` };
+  }
+  return { ok: true, serviceId: input.serviceId, countryId: input.countryId, price, availableQuantity: Number(quantityText), isActive: input.isActive };
 }
 
 const DUPLICATE: AdminResult = { ok: false, message: "This service already has a Ready Made offer for that country. Edit the existing offer instead." };
@@ -146,6 +159,7 @@ export async function createReadyMadeOffer(actor: AdminActor, input: ReadyMadeOf
         price: toDecimalString(c.price),
         currency: platformCurrency().code,
         isActive: c.isActive,
+        availableQuantity: c.availableQuantity,
       },
       include: offerInclude,
     });
@@ -154,7 +168,14 @@ export async function createReadyMadeOffer(actor: AdminActor, input: ReadyMadeOf
       "ready_made.offer_created",
       { type: "ready_made_offer", id: String(offer.id) },
       true,
-      { service: offer.service.name, country: offer.country?.name ?? "All", price: toDecimalString(c.price), currency: offer.currency, isActive: offer.isActive },
+      {
+        service: offer.service.name,
+        country: offer.country?.name ?? "All",
+        price: toDecimalString(c.price),
+        currency: offer.currency,
+        availableQuantity: c.availableQuantity,
+        isActive: offer.isActive,
+      },
       `Created Ready Made offer ${label(offer)}`,
     );
     return { ok: true, message: `Ready Made offer created: ${label(offer)}.` };
@@ -182,6 +203,7 @@ export async function updateReadyMadeOffer(actor: AdminActor, id: number, input:
         price: toDecimalString(c.price),
         currency: platformCurrency().code,
         isActive: c.isActive,
+        availableQuantity: c.availableQuantity,
       },
       include: offerInclude,
     });
@@ -195,6 +217,8 @@ export async function updateReadyMadeOffer(actor: AdminActor, id: number, input:
   if (toMinor(before.price) !== c.price) changes.price = { from: toDecimalString(toMinor(before.price)), to: toDecimalString(c.price) };
   if (before.currency !== after.currency) changes.currency = { from: before.currency, to: after.currency };
   if (before.isActive !== after.isActive) changes.isActive = { from: before.isActive, to: after.isActive };
+  // "before" is read before the save: purchases in between are not shown as an admin change.
+  if (before.availableQuantity !== after.availableQuantity) changes.availableQuantity = { from: before.availableQuantity, to: after.availableQuantity };
   await audit(
     actor,
     "ready_made.offer_updated",
@@ -247,7 +271,7 @@ export async function ensureDefaultReadyMadeOffer(price: string): Promise<{ stat
   if (!service) return { status: "no_service" };
   const existing = await db().readyMadeOffer.findUnique({ where: { serviceId_countryKey: { serviceId: service.id, countryKey: 0 } }, include: offerInclude });
   if (existing) return { status: "exists", offer: label(existing) };
-  const c = await check({ serviceId: service.id, countryId: null, price, isActive: true });
+  const c = await check({ serviceId: service.id, countryId: null, price, availableQuantity: "0", isActive: true });
   if (!c.ok) return { status: "invalid_price" };
   try {
     const offer = await db().readyMadeOffer.create({

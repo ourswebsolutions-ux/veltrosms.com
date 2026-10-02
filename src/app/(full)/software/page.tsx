@@ -34,7 +34,7 @@ export default async function SoftwarePage() {
         <EmptyState icon="cpu" title={t("software.empty")} description={t("software.emptyHint")} />
       </Card>
 
-      <Card id="developers" className="grid scroll-mt-36 items-center gap-8 sm:!p-10 md:grid-cols-[200px_1fr]">
+      <Card id="developers" className="grid grid-cols-1 scroll-mt-36 items-center gap-8 sm:!p-10 md:grid-cols-[200px_1fr]">
         <span aria-hidden="true" className="mx-auto hidden size-40 items-center justify-center rounded-full bg-primary-tint text-primary md:flex">
           <Icon name="code" size={72} strokeWidth={1.4} />
         </span>

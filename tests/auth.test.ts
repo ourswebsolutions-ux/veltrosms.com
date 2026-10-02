@@ -29,9 +29,9 @@ function tokenFromEmail(to: string, path: string): string {
   return decodeURIComponent(match[1]);
 }
 
+/** Signup needs no email confirmation: the account can log in immediately. */
 async function registerAndVerify(email = EMAIL, password = PASSWORD) {
-  await auth.register({ name: "Ada Lovelace", email, password }, ctx);
-  const result = await auth.verifyEmail(tokenFromEmail(email, "/verify-email"));
+  const result = await auth.register({ name: "Ada Lovelace", email, password }, ctx);
   expect(result.ok).toBe(true);
 }
 
@@ -104,11 +104,12 @@ describe("input validation (shared client/server rules)", () => {
 
 /* ---------------------------------------------------------- registration -- */
 
-describe("registration", () => {
-  it("creates an unverified user with a hashed password, a wallet and a verification email", async () => {
-    expect(await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx)).toEqual({ ok: true });
+describe("registration (no email confirmation)", () => {
+  it("creates an active, ready-to-use user with a hashed password and a wallet, and signs it in", async () => {
+    const r = await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
+    expect(r.ok).toBe(true);
     const user = await db().user.findUniqueOrThrow({ where: { email: EMAIL } });
-    expect(user.emailVerifiedAt).toBeNull();
+    expect(user.emailVerifiedAt).not.toBeNull();
     expect(user.status).toBe("ACTIVE");
     expect(user.role).toBe("USER");
     expect(user.passwordHash).not.toContain(PASSWORD);
@@ -116,73 +117,38 @@ describe("registration", () => {
     expect(await verifyPassword(PASSWORD, user.passwordHash)).toBe(true);
     const wallet = await db().wallet.findUniqueOrThrow({ where: { userId: user.id } });
     expect(wallet.balance.toString()).toBe("0");
-
-    const token = tokenFromEmail(EMAIL, "/verify-email");
-    // Only the hash is stored.
-    const stored = await db().authToken.findFirstOrThrow({ where: { userId: user.id } });
-    expect(stored.tokenHash).toBe(hashToken(token));
-    expect(stored.tokenHash).not.toBe(token);
+    // Signed in straight away, and no confirmation email or token.
+    expect(r.ok && (await validateSessionToken(r.session.token))?.email).toBe(EMAIL);
+    expect(testOutbox.some((m) => m.text.includes("/verify-email"))).toBe(false);
+    expect(await db().authToken.count()).toBe(0);
   });
 
-  it("handles a duplicate email without creating a second account or revealing it", async () => {
+  it("can log in immediately after signing up", async () => {
     await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    testOutbox.length = 0;
+    const login = await auth.login({ email: EMAIL, password: PASSWORD, remember: false }, ctx);
+    expect(login.ok).toBe(true);
+  });
+
+  it("rejects a duplicate email without creating a second account", async () => {
+    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
     const second = await auth.register({ name: "Someone Else", email: EMAIL, password: "another-pass-77" }, ctx);
-    expect(second).toEqual({ ok: true }); // same response as a new signup
+    expect(second).toEqual({ ok: false, code: "email_taken" });
     expect(await db().user.count()).toBe(1);
-    expect(testOutbox).toHaveLength(1);
-    expect(testOutbox[0].subject).toMatch(/already exists/);
   });
 
-  it("rate limits repeated signups for one address", async () => {
-    for (let i = 0; i < 3; i++) await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    const r = await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
+  it("existing accounts that were never confirmed can log in", async () => {
+    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
+    await db().user.updateMany({ data: { emailVerifiedAt: null } });
+    const r = await auth.login({ email: EMAIL, password: PASSWORD, remember: false }, ctx);
+    expect(r.ok).toBe(true);
+    expect(r.ok && (await validateSessionToken(r.session.token))?.email).toBe(EMAIL);
+  });
+
+  it("rate limits repeated signups from one IP", async () => {
+    const ipCtx = { ip: "203.0.113.9", userAgent: "vitest" };
+    for (let i = 0; i < 5; i++) await auth.register({ name: "Ada Lovelace", email: `ada${i}@example.com`, password: PASSWORD }, ipCtx);
+    const r = await auth.register({ name: "Ada Lovelace", email: "ada9@example.com", password: PASSWORD }, ipCtx);
     expect(r).toMatchObject({ ok: false, code: "rate_limited" });
-  });
-});
-
-/* ---------------------------------------------------------- verification -- */
-
-describe("email verification", () => {
-  it("verifies with a valid token", async () => {
-    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    expect(await auth.verifyEmail(tokenFromEmail(EMAIL, "/verify-email"))).toEqual({ ok: true });
-    const user = await db().user.findUniqueOrThrow({ where: { email: EMAIL } });
-    expect(user.emailVerifiedAt).not.toBeNull();
-  });
-
-  it("rejects a reused token", async () => {
-    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    const token = tokenFromEmail(EMAIL, "/verify-email");
-    await auth.verifyEmail(token);
-    expect(await auth.verifyEmail(token)).toEqual({ ok: false, reason: "used" });
-  });
-
-  it("rejects an invalid token", async () => {
-    expect(await auth.verifyEmail("not-a-real-token-but-long-enough")).toEqual({ ok: false, reason: "invalid" });
-    expect(await auth.verifyEmail("short")).toEqual({ ok: false, reason: "invalid" });
-  });
-
-  it("rejects an expired token", async () => {
-    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    const token = tokenFromEmail(EMAIL, "/verify-email");
-    await db().authToken.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });
-    expect(await auth.verifyEmail(token)).toEqual({ ok: false, reason: "expired" });
-  });
-
-  it("resending retires the previous link", async () => {
-    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    const first = tokenFromEmail(EMAIL, "/verify-email");
-    await auth.resendVerification(EMAIL, ctx);
-    const second = tokenFromEmail(EMAIL, "/verify-email");
-    expect(second).not.toBe(first);
-    expect(await auth.verifyEmail(first)).toEqual({ ok: false, reason: "used" });
-    expect(await auth.verifyEmail(second)).toEqual({ ok: true });
-  });
-
-  it("resend gives the same answer for unknown emails and sends nothing", async () => {
-    expect(await auth.resendVerification("nobody@example.com", ctx)).toEqual({ ok: true });
-    expect(testOutbox).toHaveLength(0);
   });
 });
 
@@ -213,12 +179,6 @@ describe("login", () => {
     await registerAndVerify();
     expect(await auth.login({ email: EMAIL, password: "wrong-password-1", remember: false }, ctx)).toEqual({ ok: false, code: "invalid" });
     expect(await auth.login({ email: "nobody@example.com", password: PASSWORD, remember: false }, ctx)).toEqual({ ok: false, code: "invalid" });
-  });
-
-  it("reports an unverified account only after the correct password", async () => {
-    await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
-    expect(await auth.login({ email: EMAIL, password: "wrong-password-1", remember: false }, ctx)).toEqual({ ok: false, code: "invalid" });
-    expect(await auth.login({ email: EMAIL, password: PASSWORD, remember: false }, ctx)).toEqual({ ok: false, code: "unverified" });
   });
 
   it("blocks disabled accounts and invalidates their existing sessions", async () => {
@@ -290,7 +250,7 @@ describe("password reset", () => {
     expect(await auth.resetPassword(first, "brand-new-pass-7")).toEqual({ ok: false, reason: "used" });
   });
 
-  it("verifies the email of an unverified account on reset", async () => {
+  it("password reset works and the new password logs in", async () => {
     await auth.register({ name: "Ada Lovelace", email: EMAIL, password: PASSWORD }, ctx);
     await auth.requestPasswordReset(EMAIL, ctx);
     await auth.resetPassword(tokenFromEmail(EMAIL, "/reset-password"), "brand-new-pass-7");

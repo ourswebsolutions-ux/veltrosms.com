@@ -23,7 +23,7 @@ export function Breadcrumbs({
                 /
               </li>
             )}
-            <li>
+            <li className="min-w-0 wrap-anywhere">
               {item.href ? (
                 <Link href={item.href} className="text-primary hover:underline">
                   {item.label}

@@ -15,7 +15,7 @@ export function PartnerForm({ kind }: { kind: "provider" | "software" }) {
   return (
     <form action={action} noValidate className="space-y-5">
       <input type="hidden" name="kind" value={kind} />
-      <div className="grid gap-x-5 gap-y-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
         <Field label={t("partner.messenger")} error={e.messenger}>
           {(p) => <Input name="messenger" placeholder={t("partner.messengerHint")} {...p} />}
         </Field>

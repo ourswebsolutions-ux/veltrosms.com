@@ -923,4 +923,12 @@ export const bn: Messages = {
   "srv.ledger.topupMethod": "ব্যালেন্স যোগ · {method} · {ref}",
   "srv.ledger.gatewayTopup": "{name} ব্যালেন্স যোগ {ref}",
   "srv.allCountries": "সব দেশ",
+  /* server messages: signup */
+  "srv.auth.emailTaken": "এই ইমেইলে আগে থেকেই একটি অ্যাকাউন্ট আছে। এর বদলে লগ ইন করুন।",
+  /* ready made: quantity */
+  "rm.availableLabel": "পাওয়া যাচ্ছে",
+  "rm.availableOne": "1টি অ্যাকাউন্ট পাওয়া যাচ্ছে",
+  "rm.availableMany": "{count}টি অ্যাকাউন্ট পাওয়া যাচ্ছে",
+  "rm.outOfStock": "স্টক শেষ",
+  "srv.ready.outOfStock": "এই রেডি মেড অ্যাকাউন্টটি স্টকে নেই। আপনার কাছ থেকে কোনো টাকা নেওয়া হয়নি।",
 };

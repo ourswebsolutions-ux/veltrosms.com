@@ -18,7 +18,7 @@ async function boughtOrder(balance = 10) {
   await db().user.update({ where: { id: admin.id }, data: { role: "ADMIN" } });
   const actor: AdminActor = { id: admin.id, email: admin.email, name: admin.name, sessionId: "test" };
   const svc = await db().service.create({ data: { provider: "fake", providerCode: "wa", slug: "wa", name: "Whatsapp" } });
-  await createReadyMadeOffer(actor, { serviceId: svc.id, countryId: null, price: "2.50", isActive: true });
+  await createReadyMadeOffer(actor, { serviceId: svc.id, countryId: null, price: "2.50", availableQuantity: "100", isActive: true });
   const offer = await db().readyMadeOffer.findFirstOrThrow();
   const buyer = await createUser();
   await creditWallet({ userId: buyer.id, amount: USD(balance), type: "DEPOSIT", reference: `test:${buyer.id}:fund` });

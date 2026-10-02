@@ -20,11 +20,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (await getCurrentUser()) redirect(next ?? "/profile");
   const t = await getT();
 
-  const notice = one(sp.verified) ? (
-    <Alert tone="success" title={t("auth.emailConfirmed")}>
-      {t("auth.emailConfirmedBody")}
-    </Alert>
-  ) : one(sp.emailChanged) ? (
+  const notice = one(sp.emailChanged) ? (
     <Alert tone="success" title={t("auth.emailChanged")}>
       {t("auth.emailChangedBody")}
     </Alert>

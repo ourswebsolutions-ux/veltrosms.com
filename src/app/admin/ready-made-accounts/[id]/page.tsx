@@ -24,13 +24,13 @@ export default async function AdminReadyMadeOfferPage({ params }: PageProps<"/ad
   return (
     <Card>
       <Breadcrumbs items={[{ label: "Ready Made Accounts", href: "/admin/ready-made-accounts" }, { label: title }]} className="mb-3" />
-      <PageHeader title={title} description="Edit the service, country, price or status of this Ready Made offer. Changes are audited." />
+      <PageHeader title={title} description="Edit the service, country, price, available quantity or status of this Ready Made offer. Changes are audited." />
       <ReadyMadeOfferForm
         action={adminReadyMadeUpdateAction}
         services={options.services}
         countries={options.countries}
         currency={options.currency}
-        initial={{ id: offer.id, serviceId: offer.service.id, countryId: offer.country?.id ?? null, price: toDecimalString(offer.price).replace(/(\.\d\d\d*?)0+$/, "$1"), isActive: offer.isActive }}
+        initial={{ id: offer.id, serviceId: offer.service.id, countryId: offer.country?.id ?? null, price: toDecimalString(offer.price).replace(/(\.\d\d\d*?)0+$/, "$1"), availableQuantity: String(offer.availableQuantity), isActive: offer.isActive }}
         submitLabel="Save changes"
       />
     </Card>

@@ -7,7 +7,8 @@ import { useT } from "@/i18n/client";
 
 /**
  * Accessible modal built on the native <dialog> element (focus trap, Esc and
- * top-layer rendering come for free).
+ * top-layer rendering come for free). Never taller than the screen: the title
+ * bar and the actions stay in view and only the body scrolls.
  */
 export function Modal({
   open,
@@ -43,25 +44,23 @@ export function Modal({
         if (e.target === e.currentTarget) onClose();
       }}
       className={cn(
-        "m-auto w-[calc(100%-2rem)] max-w-lg rounded-[var(--radius-card)] bg-surface p-0 text-fg shadow-pop backdrop:bg-black/40",
+        "m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-[var(--radius-card)] bg-surface p-0 text-fg shadow-pop backdrop:bg-black/40 open:flex",
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-        <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line py-3 ps-5 pe-3 sm:py-4">
+        <h2 className="min-w-0 text-lg font-semibold wrap-anywhere">{title}</h2>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-fg-muted hover:bg-surface-muted hover:text-fg"
+          className="shrink-0 rounded-md p-2 text-fg-muted hover:bg-surface-muted hover:text-fg"
           aria-label={t("common.close")}
         >
           <Icon name="close" />
         </button>
       </div>
-      <div className="px-5 py-4">{children}</div>
-      {footer && (
-        <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+      {footer && <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
     </dialog>
   );
 }

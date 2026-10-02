@@ -36,7 +36,7 @@ export default async function ReadyMadeAccountsPage() {
           description={t("rm.intro")}
           actions={
             viewer.signedIn ? (
-              <div className="flex items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pe-1 ps-3">
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-muted py-1 pe-1 ps-3">
                 <span className="text-sm text-fg-muted">{t("common.balance")}</span>
                 <span className="font-semibold tabular-nums">
                   <Money amount={viewer.balance} currency={viewer.currency} variant="both" />
@@ -64,7 +64,7 @@ export default async function ReadyMadeAccountsPage() {
                 <Link href={`/accounts/orders/${p.id}`} className="flex items-center gap-3 py-3 hover:text-primary">
                   <ServiceAvatar name={p.service.name} color={p.service.color} logo={p.service.logo} size={28} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">
+                    <span className="line-clamp-2 block font-medium">
                       <bdi>{p.service.name}</bdi> · <bdi>{p.country?.name ?? t("common.allCountries")}</bdi>
                     </span>
                     <span className="block text-[13px] text-fg-muted">

@@ -163,3 +163,22 @@
     scrollbar-color: var(--color-line-strong) transparent;
   }
 }
+
+/*
+ * Touch screens: iOS zooms the page when a focused field's text is smaller
+ * than 16px, which pushes the layout sideways. Desktop keeps the design sizes.
+ */
+@media (pointer: coarse) {
+  input:not([type="checkbox"], [type="radio"], [type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Long unbroken strings (emails, references, URLs) wrap instead of pushing the page sideways. */
+@layer base {
+  body {
+    overflow-wrap: break-word;
+  }
+}

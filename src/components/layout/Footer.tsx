@@ -24,7 +24,7 @@ export async function Footer() {
           </a>
         </div>
 
-        <div className="grid gap-6 border-b border-line py-6 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="grid grid-cols-1 gap-6 border-b border-line py-6 lg:grid-cols-[1fr_auto] lg:items-center">
           <nav aria-label={t("nav.footer")}>
             <ul className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-between lg:gap-x-10">
               {footerNav.map((item) => (

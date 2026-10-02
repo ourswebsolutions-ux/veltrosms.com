@@ -31,7 +31,7 @@ export function ActiveOrdersList({
 
   if (shown.length === 0) return <>{empty}</>;
   return (
-    <div className={cn("grid gap-3", className)}>
+    <div className={cn("grid grid-cols-1 gap-3", className)}>
       {shown.map((o) => (
         <NumberCard key={o.id} order={o} />
       ))}

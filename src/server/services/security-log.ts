@@ -9,6 +9,7 @@ import { db, type Prisma } from "@/server/db";
  */
 
 export type SecurityEvent =
+  | "register"
   | "login_success"
   | "login_failed"
   | "login_blocked"

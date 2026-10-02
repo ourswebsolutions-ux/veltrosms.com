@@ -31,20 +31,6 @@ function text(lines: string[]): string {
   return [...lines, "", `— ${siteConfig.name}`].join("\n");
 }
 
-export function verificationEmail(to: string, name: string, url: string, hours: number): EmailMessage {
-  return {
-    to,
-    subject: `Confirm your email for ${siteConfig.name}`,
-    html: layout({
-      heading: "Confirm your email",
-      paragraphs: [`Hi ${esc(name)},`, "Please confirm your email address to activate your account."],
-      action: { label: "Confirm email", url },
-      footnote: `This link expires in ${hours} hours. If you didn't create an account, you can ignore this email.`,
-    }),
-    text: text([`Hi ${name},`, "", "Confirm your email address to activate your account:", url, "", `This link expires in ${hours} hours.`, "If you didn't create an account, ignore this email."]),
-  };
-}
-
 export function passwordResetEmail(to: string, name: string, url: string, minutes: number): EmailMessage {
   return {
     to,
@@ -56,25 +42,6 @@ export function passwordResetEmail(to: string, name: string, url: string, minute
       footnote: `This link expires in ${minutes} minutes and can be used once. If you didn't request a reset, you can ignore this email — your password won't change.`,
     }),
     text: text([`Hi ${name},`, "", "Reset your password using this link:", url, "", `It expires in ${minutes} minutes and works once.`, "If you didn't request this, ignore this email."]),
-  };
-}
-
-/** Sent when someone tries to register with an email that already has an account. */
-export function accountExistsEmail(to: string, name: string, loginUrl: string, resetUrl: string): EmailMessage {
-  return {
-    to,
-    subject: `An account already exists for this email on ${siteConfig.name}`,
-    html: layout({
-      heading: "You already have an account",
-      paragraphs: [
-        `Hi ${esc(name)},`,
-        "Someone (hopefully you) tried to create a new account with this email address. You already have one, so no new account was created.",
-        `Forgot your password? <a href="${esc(resetUrl)}" style="color:#0f3b6a">Reset it here</a>.`,
-      ],
-      action: { label: "Log in", url: loginUrl },
-      footnote: "If this wasn't you, no action is needed.",
-    }),
-    text: text([`Hi ${name},`, "", "Someone tried to register with this email, but you already have an account.", `Log in: ${loginUrl}`, `Reset password: ${resetUrl}`]),
   };
 }
 

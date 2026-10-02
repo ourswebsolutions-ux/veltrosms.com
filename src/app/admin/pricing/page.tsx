@@ -36,7 +36,7 @@ export default async function AdminPricingPage() {
             ["Environment defaults", `${p.defaults.markupPercent}% markup · ${p.defaults.minMargin} ${p.currency} minimum margin`],
           ]}
         />
-        <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
           {EXAMPLES.map((cost) => (
             <div key={cost} className="rounded-lg bg-surface-muted px-3 py-2">
               <p className="text-fg-muted">Cost {formatPrice(cost, p.providerCurrency)}</p>

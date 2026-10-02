@@ -59,7 +59,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
         <DateRangeFilter range={range} basePath="/admin" className="mb-5" />
 
         <h2 className="mb-2 text-sm font-semibold text-fg-muted">Revenue (number sales − refunds)</h2>
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat icon="chart" label={`Revenue · ${period}`} value={money(d.revenue.range.sales)} hint={`Gross margin ${money(d.revenue.range.margin)}`} tone="good" />
           <Stat icon="zap" label="Today's revenue" value={money(d.revenue.today.sales)} hint={`Margin ${money(d.revenue.today.margin)}`} />
           <Stat icon="trendingUp" label="This month" value={money(d.revenue.month.sales)} hint={`Margin ${money(d.revenue.month.margin)}`} />
@@ -67,7 +67,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
         </div>
 
         <h2 className="mb-2 text-sm font-semibold text-fg-muted">Users</h2>
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat icon="user" label="Total users" value={d.users.total.toLocaleString("en-US")} />
           <Stat icon="checkCircle" label="Active" value={d.users.active.toLocaleString("en-US")} hint={`${d.users.active30} with a session in 30 days`} tone="good" />
           <Stat icon="lock" label="Suspended" value={d.users.suspended.toLocaleString("en-US")} tone={d.users.suspended ? "warn" : undefined} />
@@ -75,7 +75,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
         </div>
 
         <h2 className="mb-2 text-sm font-semibold text-fg-muted">Wallets and top-ups</h2>
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat icon="wallet" label="Total wallet balance" value={money(d.money.walletBalances)} hint="Sum of all customer wallets" />
           <Stat icon="plus" label={`Deposits · ${period}`} value={money(d.money.deposits)} hint={`Adjustments ${money(d.money.adjustments)}`} />
           <Stat icon="history" label="Pending top-ups" value={String(d.topups.pending)} hint="Waiting for verification" tone={d.topups.pending ? "bad" : undefined} />
@@ -83,7 +83,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
         </div>
 
         <h2 className="mb-2 text-sm font-semibold text-fg-muted">Orders · {period}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat icon="phone" label="Total orders" value={d.orders.total.toLocaleString("en-US")} />
           <Stat icon="checkCircle" label="Successful" value={d.orders.successful.toLocaleString("en-US")} tone="good" />
           <Stat icon="alert" label="Failed" value={d.orders.failed.toLocaleString("en-US")} hint={`${d.orders.cancelled} cancelled or expired (refunded)`} tone={d.orders.failed ? "warn" : undefined} />
@@ -96,7 +96,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
         <ActivityChart days={d.byDay} />
       </Card>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Recent title="Recent top-up requests" href="/admin/topups?status=all" empty={d.recentTopUps.length === 0}>
           {d.recentTopUps.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">

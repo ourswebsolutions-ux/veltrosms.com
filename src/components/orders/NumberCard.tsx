@@ -141,7 +141,7 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
         <OrderStatus status={order.status} />
       </header>
 
-      <div className="mt-3 grid gap-2 @md:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 @md:grid-cols-2">
         <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-muted py-1.5 pe-1.5 ps-3">
           <div className="min-w-0">
             <p className="text-xs text-fg-muted">{t("order.phone")}</p>

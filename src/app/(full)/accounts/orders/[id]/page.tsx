@@ -68,12 +68,12 @@ export default async function ReadyMadeOrderPage({ params, searchParams }: PageP
           <p className="text-2xl font-bold tracking-wide tabular-nums">
             <span dir="ltr">{contact.whatsapp}</span>
           </p>
-          <ButtonLink href={wa} target="_blank" rel="noopener noreferrer" size="lg" className="mt-4 !bg-[#25d366] hover:!bg-[#1ebe5a]">
+          <ButtonLink href={wa} target="_blank" rel="noopener noreferrer" size="lg" className="mt-4 !bg-[#25d366] hover:!bg-[#1ebe5a] h-auto min-h-12 max-w-full py-2.5 text-center whitespace-normal">
             <Icon name="message" size={20} /> {t("wa.contact")}
           </ButtonLink>
         </div>
 
-        <dl className="mt-6 grid gap-x-6 gap-y-3 rounded-xl bg-surface-muted p-4 text-[15px] sm:grid-cols-[160px_minmax(0,1fr)]">
+        <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-3 rounded-xl bg-surface-muted p-4 text-[15px] sm:grid-cols-[160px_minmax(0,1fr)]">
           <dt className="text-fg-muted">{t("rm.orderReference")}</dt>
           <dd className="-mt-2 inline-flex items-center gap-1 font-mono font-semibold sm:mt-0">
             <bdi>{order.reference}</bdi>

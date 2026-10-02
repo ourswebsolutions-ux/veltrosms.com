@@ -10,7 +10,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
-import { formatPrice } from "@/lib/format";
+import { formatCount, formatPrice } from "@/lib/format";
 import { purchaseReadyMadeAction } from "@/server/actions/ready-made";
 import type { Viewer } from "@/types/account";
 import type { ReadyMadeOfferView, ReadyMadePurchaseResult } from "@/types/ready-made";
@@ -46,7 +46,7 @@ export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView
 
   return (
     <>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {offers.map((o) => (
           <li key={o.id} className="flex flex-col gap-4 rounded-xl border border-line bg-surface-muted/60 p-4">
             <div className="flex items-center gap-3">
@@ -68,6 +68,7 @@ export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView
                     </>
                   )}
                 </p>
+                <Availability count={o.available} />
               </div>
               <div className="flex flex-col items-end gap-1">
                 <PricePill>
@@ -86,7 +87,7 @@ export function ReadyMadeOffers({ offers, viewer }: { offers: ReadyMadeOfferView
               <span className="text-xs text-fg-muted">
                 <bdi>{o.currency}</bdi> · {t("rm.type")}
               </span>
-              <Button size="sm" onClick={() => setSelected(o)}>
+              <Button size="sm" onClick={() => setSelected(o)} disabled={o.available <= 0}>
                 {t("rm.purchase")}
               </Button>
             </div>
@@ -155,10 +156,13 @@ function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeO
       }
       setResult(r);
       if (r.code !== "ERROR") setAttempt((n) => n + 1);
+      // Someone bought the last one: refresh the list so the card shows the new availability.
+      if (r.code === "OUT_OF_STOCK") router.refresh();
     });
   }
 
   const changed = result && !result.ok && result.code === "PRICE_CHANGED" ? result.price : undefined;
+  const soldOut = offer !== null && offer.available <= 0;
 
   return (
     <Modal
@@ -174,7 +178,13 @@ function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeO
             <Button
               onClick={confirm}
               loading={busy}
-              disabled={busy || insufficient || changed !== undefined || (result !== null && !result.ok && result.code === "UNAVAILABLE")}
+              disabled={
+                busy ||
+                insufficient ||
+                soldOut ||
+                changed !== undefined ||
+                (result !== null && !result.ok && (result.code === "UNAVAILABLE" || result.code === "OUT_OF_STOCK"))
+              }
             >
               {t("rm.confirmFor", {
                 price: formatPrice(agreedPrice, currency),
@@ -186,14 +196,14 @@ function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeO
             <ButtonLink href="/login?next=%2Faccounts" variant="outline">
               {t("nav.login")}
             </ButtonLink>
-            <ButtonLink href="/register">{t("rm.createAccount")}</ButtonLink>
+            <ButtonLink href="/register?next=%2Faccounts">{t("rm.createAccount")}</ButtonLink>
           </>
         )
       }
     >
       {offer && (
         <div className="space-y-4">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-[15px]">
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-[15px]">
             <dt className="text-fg-muted">{t("common.service")}</dt>
             <dd className="flex items-center gap-2 font-medium">
               <ServiceAvatar name={offer.service.name} color={offer.service.color} logo={offer.service.logo} size={22} />
@@ -212,6 +222,10 @@ function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeO
             </dd>
             <dt className="text-fg-muted">{t("rm.purchaseType")}</dt>
             <dd className="font-medium">{t("rm.type")}</dd>
+            <dt className="text-fg-muted">{t("rm.availableLabel")}</dt>
+            <dd>
+              <Availability count={offer.available} />
+            </dd>
             <ChargeRows amount={agreedPrice} currency={currency} />
             {viewer.signedIn && (
               <>
@@ -270,7 +284,7 @@ function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeO
               {t("rm.confirmNewPrice")}
             </Alert>
           ) : result && !result.ok ? (
-            <Alert tone={result.code === "INSUFFICIENT_FUNDS" || result.code === "UNAVAILABLE" ? "warning" : "error"}>
+            <Alert tone={result.code === "INSUFFICIENT_FUNDS" || result.code === "UNAVAILABLE" || result.code === "OUT_OF_STOCK" ? "warning" : "error"}>
               {t.server(result.message)}
             </Alert>
           ) : (
@@ -279,5 +293,16 @@ function ReadyMadePurchaseDialog({ offer, viewer, onClose }: { offer: ReadyMadeO
         </div>
       )}
     </Modal>
+  );
+}
+
+/** "25 accounts available" / "Out of stock" for one offer. */
+function Availability({ count }: { count: number }) {
+  const t = useT();
+  if (count <= 0) return <p className="mt-0.5 text-[13px] font-semibold text-danger">{t("rm.outOfStock")}</p>;
+  return (
+    <p className="mt-0.5 text-[13px] font-medium text-success tabular-nums">
+      {count === 1 ? t("rm.availableOne") : t("rm.availableMany", { count: formatCount(count) })}
+    </p>
   );
 }

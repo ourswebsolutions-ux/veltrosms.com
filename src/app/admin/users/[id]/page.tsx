@@ -78,7 +78,6 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
               </span>,
             ],
             ["Role", user.role === "admin" ? "Administrator" : "User"],
-            ["Email confirmed", <YesNo key="v" value={user.emailVerified} />],
             ["Phone", "Not collected"],
             ["Registered", formatDateTime(user.createdAt)],
             ["Last login", user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "—"],
@@ -165,7 +164,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
             </ButtonLink>
           }
         />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <Stat icon="wallet" label="Balance" value={money(user.balance)} />
           <Stat icon="plus" label="Deposits" value={money(user.totals.deposits)} />
           <Stat icon="chart" label="Net spending" value={money(user.spent)} hint={`Purchases ${money(-user.totals.purchases)}`} />
@@ -247,7 +246,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
 
       <Card>
         <PageHeader as="h2" title="Security and activity" />
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <div>
             <h3 className="mb-2 text-sm font-semibold">Admin actions on this account</h3>
             {user.history.length === 0 ? (

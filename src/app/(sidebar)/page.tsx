@@ -41,7 +41,7 @@ export default async function HomePage() {
         ) : popular.data.length === 0 ? (
           <EmptyState compact title={t("home.nothingInStock")} />
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2 min-[1400px]:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 min-[1400px]:grid-cols-3">
             {popular.data.map((g) => (
               <li key={`${g.service.slug}-${g.country.id}`}>
                 <Link
@@ -68,7 +68,7 @@ export default async function HomePage() {
         )}
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <QuickLink icon="code" title={t("home.developerApi")} href="/api" linkLabel={t("home.readDocs")} />
         <QuickLink icon="cpu" title={t("home.partnerSoftware")} href="/software" linkLabel={t("home.browseTools")} />
         <QuickLink icon="wallet" title={t("nav.addFunds")} href="/profile/top-up" linkLabel={t("home.topUpBalance")} />
@@ -138,7 +138,7 @@ function HowItWorks({ t }: { t: Translator }) {
     <Card>
       <h2 className="text-2xl font-semibold sm:text-[28px]">{t("home.howTitle")}</h2>
       <p className="mt-1 text-[15px] text-fg-muted">{t("home.howIntro")}</p>
-      <ol className="mt-6 grid gap-6 sm:grid-cols-3">
+      <ol className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {STEPS.map((step, i) => (
           <li key={step.title} className="relative">
             {i < STEPS.length - 1 && (
@@ -175,7 +175,7 @@ function Benefits({ t }: { t: Translator }) {
   return (
     <Card>
       <PageHeader as="h2" size="lg" title={t("home.whyUs")} className="mb-4" />
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {BENEFITS.map((b) => (
           <li key={b.title} className="flex gap-3 rounded-xl bg-surface-muted p-4">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-white">

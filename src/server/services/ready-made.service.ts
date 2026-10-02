@@ -22,10 +22,14 @@ import { applyInTx, WalletError } from "./wallet.service";
  * One database transaction:
  *   1. locks the offer row (an admin can't disable/reprice it mid-purchase)
  *      and re-checks it is on sale at the price the customer agreed to;
- *   2. creates the order (unique per user + idempotency key);
- *   3. debits the wallet through the ledger (applyInTx: wallet row lock, no
+ *   2. takes one account from the offer's available quantity (a conditional
+ *      decrement on the locked row — concurrent buyers queue on the lock and
+ *      the last one finds it at 0; a CHECK keeps it from going negative);
+ *   3. creates the order (unique per user + idempotency key);
+ *   4. debits the wallet through the ledger (applyInTx: wallet row lock, no
  *      negative balance, unique reference "ready_made:<id>:charge").
- * Any failure rolls all of it back. The amount always comes from the offer.
+ * Any failure rolls all of it back (stock included). The amount always comes
+ * from the offer.
  */
 
 /** Used when the admin hasn't set a WhatsApp number (the site-wide support WhatsApp). */
@@ -59,6 +63,7 @@ export async function listReadyMadeOffers(): Promise<ReadyMadeOfferView[]> {
     country: o.country ? { name: o.country.name, iso2: o.country.iso2 } : null,
     price: toMinor(o.price),
     currency: o.currency,
+    available: o.availableQuantity,
   }));
 }
 
@@ -131,6 +136,7 @@ export async function completeReadyMadeOrder(userId: string, orderId: string): P
 /* ---------------------------------------------------------------- buying -- */
 
 class NotOnSale extends Error {}
+class OutOfStock extends Error {}
 class PriceChanged extends Error {
   constructor(public readonly price: number) {
     super("price changed");
@@ -141,6 +147,12 @@ const UNAVAILABLE: ReadyMadePurchaseResult = {
   ok: false,
   code: "UNAVAILABLE",
   message: "This Ready Made offer is no longer available. You have not been charged.",
+};
+
+const OUT_OF_STOCK: ReadyMadePurchaseResult = {
+  ok: false,
+  code: "OUT_OF_STOCK",
+  message: "This Ready Made account is out of stock. You have not been charged.",
 };
 
 export async function purchaseReadyMade(
@@ -175,6 +187,12 @@ export async function purchaseReadyMade(
         if (!offer) throw new NotOnSale();
         const price = toMinor(offer.price);
         if (price !== input.price) throw new PriceChanged(price);
+        // Take one account. Conditional, so it can never go below 0 (rolled back with everything else on failure).
+        const taken = await tx.readyMadeOffer.updateMany({
+          where: { id: offer.id, availableQuantity: { gt: 0 } },
+          data: { availableQuantity: { decrement: 1 } },
+        });
+        if (taken.count !== 1) throw new OutOfStock();
 
         const created = await tx.readyMadeOrder.create({
           data: {
@@ -207,6 +225,7 @@ export async function purchaseReadyMade(
       return { ok: true, orderId: order.id, reference: order.reference };
     } catch (error) {
       if (error instanceof NotOnSale) return UNAVAILABLE;
+      if (error instanceof OutOfStock) return OUT_OF_STOCK;
       if (error instanceof PriceChanged) {
         return { ok: false, code: "PRICE_CHANGED", message: "The price has changed. Please review the new price.", price: error.price };
       }

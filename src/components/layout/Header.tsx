@@ -18,14 +18,15 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-40 shadow-[0_2px_8px_rgba(34,37,45,0.06)]">
       <div className="bg-surface">
-        <PageContainer className="flex h-14 items-center gap-3 sm:h-16 xl:gap-6">
+        <PageContainer className="flex h-14 items-center gap-2 sm:h-16 sm:gap-3 xl:gap-6">
           <Logo />
           <Navbar />
-          <div className="ms-auto flex items-center gap-2">
+          {/* Phones: compact currency/language triggers; notifications, theme and sound move into the menu. */}
+          <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
             <CurrencyMenu />
             <LanguageMenu />
             <ThemeToggle className="hidden lg:flex" />
-            <NotificationsMenu />
+            <NotificationsMenu className="hidden sm:block" />
             <SoundToggle className="hidden lg:flex" />
             <MobileNavbar />
           </div>

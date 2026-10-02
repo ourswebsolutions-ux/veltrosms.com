@@ -17,7 +17,7 @@ export function FeedbackForm() {
     <Card className="border border-line bg-surface-muted! shadow-none!">
       <h2 className="mb-4 text-2xl font-semibold">{t("feedback.title")}</h2>
       <form action={action} noValidate className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-[1fr_1.4fr]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1.4fr]">
           <div className="space-y-4">
             <Field label={t("common.name")} required error={e.name}>
               {(p) => <Input name="name" autoComplete="name" className="bg-surface" {...p} />}

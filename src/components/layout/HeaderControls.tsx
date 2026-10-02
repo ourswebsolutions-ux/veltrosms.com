@@ -15,7 +15,7 @@ import { setLocaleAction } from "@/server/actions/locale";
 
 /** Square light-grey icon button used in the header's right cluster. */
 export const headerIconButton =
-  "flex size-10 items-center justify-center rounded-lg bg-[rgba(34,37,45,0.04)] text-primary transition-colors hover:bg-primary-tint active:bg-primary-selected dark:bg-surface-muted";
+  "flex size-9 sm:size-10 items-center justify-center rounded-lg bg-[rgba(34,37,45,0.04)] text-primary transition-colors hover:bg-primary-tint active:bg-primary-selected dark:bg-surface-muted";
 
 export function HeaderIconButton({
   label,
@@ -106,9 +106,10 @@ export function LanguageMenu() {
       align="right"
       panelClassName="w-56"
       trigger={({ open }) => (
-        <span className={cn(headerIconButton, "w-auto gap-1 px-2.5 text-[13px] font-bold text-fg", pending && "opacity-60")}>
+        <span className={cn(headerIconButton, "w-auto gap-1 px-2 sm:w-auto text-[13px] font-bold whitespace-nowrap text-fg sm:px-2.5", pending && "opacity-60")}>
+          <Icon name="globe" size={18} className="text-primary sm:hidden" />
           <span className="hidden font-medium text-fg-muted sm:inline">{t("header.language")}:</span>
-          {LOCALE_NAMES[locale].native}
+          <span className="hidden sm:inline">{LOCALE_NAMES[locale].native}</span>
           <Icon name="caretDown" size={14} className={cn("text-primary transition-transform", open && "rotate-180")} />
         </span>
       )}
@@ -151,7 +152,7 @@ export function CurrencyMenu() {
       align="right"
       panelClassName="w-64"
       trigger={({ open }) => (
-        <span className={cn(headerIconButton, "w-auto gap-1 px-2.5 text-[13px] font-bold text-fg")}>
+        <span className={cn(headerIconButton, "w-auto gap-1 px-2 sm:w-auto text-[13px] font-bold whitespace-nowrap text-fg sm:px-2.5")}>
           <span className="hidden font-medium text-fg-muted sm:inline">{t("currency.label")}:</span>
           {shown}
           <Icon name="caretDown" size={14} className={cn("text-primary transition-transform", open && "rotate-180")} />
@@ -186,12 +187,13 @@ export function CurrencyMenu() {
   );
 }
 
-export function NotificationsMenu() {
+export function NotificationsMenu({ className, align = "right" }: { className?: string; align?: "left" | "right" }) {
   const t = useT();
   return (
     <Dropdown
       label={t("header.notifications")}
-      align="right"
+      align={align}
+      className={className}
       panelClassName="w-80 max-w-[calc(100vw-1.5rem)]"
       trigger={() => (
         <span className={headerIconButton}>

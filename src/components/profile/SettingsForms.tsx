@@ -42,7 +42,7 @@ export function SettingsSection({
     <section
       id={id}
       aria-labelledby={id ? `${id}-title` : undefined}
-      className="grid scroll-mt-36 gap-4 border-t border-line py-6 first:border-0 first:pt-0 last:pb-0 md:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]"
+      className="grid grid-cols-1 scroll-mt-36 gap-4 border-t border-line py-6 first:border-0 first:pt-0 last:pb-0 md:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]"
     >
       <div>
         <h2 id={id ? `${id}-title` : undefined} className="flex items-center gap-2 font-semibold">
@@ -103,7 +103,7 @@ export function EmailForm({ email, pending }: { email: string; pending: string |
         </div>
       )}
       <form action={action} noValidate className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t("settings.newEmail")} required error={e.email}>
             {(p) => <Input {...p} name="email" type="email" autoComplete="email" defaultValue={state.values?.email} required />}
           </Field>
@@ -127,7 +127,7 @@ export function PasswordForm() {
       <Field label={t("settings.currentPassword")} required error={e.current}>
         {(p) => <PasswordInput {...p} name="current" autoComplete="current-password" required />}
       </Field>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={t("auth.newPassword")} required error={e.next} hint={t("settings.passwordHint")}>
           {(p) => <PasswordInput {...p} name="next" autoComplete="new-password" required showStrength />}
         </Field>

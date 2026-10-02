@@ -57,7 +57,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps<"/admin/
       ) : (
         <ul className="divide-y divide-line text-sm">
           {data.items.map((r) => (
-            <li key={r.id} className="grid gap-1 py-2.5 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-3">
+            <li key={r.id} className="grid grid-cols-1 gap-1 py-2.5 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-3">
               <time className="text-xs text-fg-subtle tabular-nums sm:pt-0.5" dateTime={r.at}>
                 {formatDateTime(r.at)}
               </time>
@@ -71,7 +71,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps<"/admin/
                   ) : (
                     <span className="font-medium">{r.title}</span>
                   )}
-                  {r.subject && <span className="text-fg-muted">{r.subject}</span>}
+                  {r.subject && <span className="min-w-0 text-fg-muted wrap-anywhere">{r.subject}</span>}
                 </p>
                 {r.detail && <p className="mt-0.5 font-mono text-xs break-all text-fg-subtle">{r.detail}</p>}
               </div>

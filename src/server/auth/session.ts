@@ -98,9 +98,9 @@ export async function validateSessionToken(token: string): Promise<SessionUser |
   });
   if (!session || session.expiresAt <= new Date()) return null;
   const user = session.user;
-  // Disabled or unverified accounts, and sessions older than the last password
-  // change, are rejected even if the cookie is still present.
-  if (user.status !== "ACTIVE" || !user.emailVerifiedAt) return null;
+  // Disabled accounts, and sessions older than the last password change, are
+  // rejected even if the cookie is still present. (Email confirmation is not required.)
+  if (user.status !== "ACTIVE") return null;
   if (session.createdAt < user.passwordChangedAt) return null;
 
   if (Date.now() - session.lastUsedAt.getTime() > TOUCH_INTERVAL_MS) {

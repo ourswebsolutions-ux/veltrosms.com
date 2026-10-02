@@ -923,4 +923,12 @@ export const hi: Messages = {
   "srv.ledger.topupMethod": "बैलेंस जोड़ा गया · {method} · {ref}",
   "srv.ledger.gatewayTopup": "{name} बैलेंस जोड़ {ref}",
   "srv.allCountries": "सभी देश",
+  /* server messages: signup */
+  "srv.auth.emailTaken": "इस ईमेल से एक खाता पहले से मौजूद है। इसके बजाय लॉग इन करें।",
+  /* ready made: quantity */
+  "rm.availableLabel": "उपलब्ध",
+  "rm.availableOne": "1 खाता उपलब्ध",
+  "rm.availableMany": "{count} खाते उपलब्ध",
+  "rm.outOfStock": "स्टॉक में नहीं",
+  "srv.ready.outOfStock": "यह रेडी मेड खाता स्टॉक में नहीं है। आपसे कोई शुल्क नहीं लिया गया।",
 };

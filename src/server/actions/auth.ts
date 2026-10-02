@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import {
-  emailSchema,
   fieldErrors,
   forgotPasswordSchema,
   loginSchema,
@@ -56,12 +55,13 @@ export async function registerAction(_prev: FormState, data: FormData): Promise<
 
     const { name, email, password } = parsed.data;
     const result = await auth.register({ name, email, password }, await getRequestContext());
-    if (!result.ok) return { ...tooMany(result.retryAfterSeconds), values };
-    return {
-      status: "success",
-      values: { email: parsed.data.email },
-      message: "Check your inbox to confirm your email address.",
-    };
+    if (!result.ok) {
+      if (result.code === "rate_limited") return { ...tooMany(result.retryAfterSeconds), values };
+      return { status: "error", code: "email_taken", fieldErrors: { email: "An account with this email already exists. Log in instead." }, values };
+    }
+    // No email confirmation: the new account is signed in and goes straight to the dashboard.
+    await setSessionCookie(result.session);
+    return { status: "success", redirectTo: safeNextPath(str(data, "next")) };
   });
 }
 
@@ -84,13 +84,6 @@ export async function loginAction(_prev: FormState, data: FormData): Promise<For
     switch (result.code) {
       case "rate_limited":
         return { ...tooMany(result.retryAfterSeconds), values };
-      case "unverified":
-        return {
-          status: "error",
-          code: "unverified",
-          values,
-          message: "Please confirm your email address first. We can send you a new confirmation link.",
-        };
       case "suspended":
         return { status: "error", code: "suspended", values, message: "This account has been suspended. Please contact support." };
       default:
@@ -113,22 +106,6 @@ export async function logoutAction(): Promise<void> {
   }
   await clearSessionCookie();
   redirect("/login?signedOut=1");
-}
-
-/* ---------------------------------------------------------- verification -- */
-
-export async function resendVerificationAction(_prev: FormState, data: FormData): Promise<FormState> {
-  return guarded("resend-verification", async () => {
-    const email = emailSchema.safeParse(str(data, "email"));
-    if (!email.success) return { status: "error", fieldErrors: { email: email.error.issues[0].message }, values: { email: str(data, "email") } };
-    const result = await auth.resendVerification(email.data, await getRequestContext());
-    if (!result.ok) return tooMany(result.retryAfterSeconds);
-    return {
-      status: "success",
-      values: { email: email.data },
-      message: "If that address has an unconfirmed account, we've sent a new confirmation link.",
-    };
-  });
 }
 
 /* -------------------------------------------------------- password reset -- */

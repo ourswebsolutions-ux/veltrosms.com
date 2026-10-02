@@ -28,8 +28,8 @@ export async function userForApiKey(key: string) {
   if (!key.startsWith(PREFIX) || key.length > 100) return null;
   const user = await db().user.findUnique({
     where: { apiKeyHash: hashToken(key) },
-    select: { id: true, name: true, email: true, role: true, status: true, emailVerifiedAt: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, status: true, createdAt: true },
   });
-  if (!user || user.status !== "ACTIVE" || !user.emailVerifiedAt) return null;
+  if (!user || user.status !== "ACTIVE") return null;
   return user;
 }

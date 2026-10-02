@@ -93,17 +93,20 @@ export function AccountBar({ user }: { user: AccountBarUser }) {
           onClick={() => setOpen((o) => !o)}
           className="flex h-10 w-full items-center gap-2.5 rounded-lg bg-primary-soft px-3 text-base font-semibold text-white focus-visible:outline-white"
         >
-          <span className="flex size-6 items-center justify-center rounded-full border-2 border-white/70">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white/70">
             <Icon name="user" size={14} strokeWidth={2.4} />
           </span>
-          <span className="me-auto">{t("nav.profile")}</span>
-          <span className="tabular-nums">{balance}</span>
-          <Icon name="chevronDown" className={cn("transition-transform", open && "rotate-180")} />
+          <span className="me-auto min-w-0 truncate text-start">{t("nav.profile")}</span>
+          <span className="shrink-0 whitespace-nowrap tabular-nums">{balance}</span>
+          <Icon name="chevronDown" className={cn("shrink-0 transition-transform", open && "rotate-180")} />
         </button>
         {open && (
-          <div id={menuId} className="animate-pop mt-2 rounded-lg bg-surface p-1.5 shadow-pop">
+          <div
+            id={menuId}
+            className="animate-pop mt-2 max-h-[calc(100dvh-8.5rem)] overflow-y-auto overscroll-contain rounded-lg bg-surface p-1.5 shadow-pop"
+          >
             {user && (
-              <p className="truncate px-3 py-2 text-sm text-fg-muted">
+              <p className="px-3 py-2 text-sm text-fg-muted wrap-anywhere">
                 <b className="font-semibold text-fg">{user.name}</b> · {user.email}
               </p>
             )}
@@ -170,8 +173,8 @@ function UserMenu({ name, email, isAdmin }: { name: string; email: string; isAdm
       )}
     >
       <div className="border-b border-line px-3 pt-1.5 pb-2.5">
-        <p className="truncate text-sm font-semibold">{name}</p>
-        <p className="truncate text-[13px] text-fg-muted">{email}</p>
+        <p className="text-sm font-semibold wrap-anywhere">{name}</p>
+        <p className="text-[13px] text-fg-muted wrap-anywhere">{email}</p>
       </div>
       <div className="pt-1">
         {isAdmin && (

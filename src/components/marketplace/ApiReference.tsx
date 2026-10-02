@@ -27,7 +27,7 @@ export function ApiReference({ sections }: { sections: ApiSection[] }) {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
         <ul className="space-y-2.5">
           {section.methods.map((m) => {
             const active = m.id === method.id;

@@ -843,7 +843,7 @@ export const en = {
   "psv.checkAgain": "Check again",
   /* ready made */
   "rm.metaDescription": "Ready made accounts for popular services, paid from your balance and delivered by our team on WhatsApp.",
-  "rm.intro": "Choose a service, pay from your balance, then contact us on WhatsApp with your order reference to receive your number/account.",
+  "rm.intro": "Pre-activated WhatsApp, Facebook, Telegram & other accounts are available here. Choose your desired account and get it ready to use after purchase.",
   "rm.loginToBuy": "Log in to buy",
   "rm.yourPurchases": "Your Ready Made purchases",
   "rm.yourPurchasesHint": "Open a purchase to see its reference and contact us on WhatsApp.",
@@ -920,4 +920,12 @@ export const en = {
   "srv.ledger.topupMethod": "Top-up · {method} · {ref}",
   "srv.ledger.gatewayTopup": "{name} balance top-up {ref}",
   "srv.allCountries": "All countries",
+  /* server messages: signup */
+  "srv.auth.emailTaken": "An account with this email already exists. Log in instead.",
+  /* ready made: quantity */
+  "rm.availableLabel": "Available",
+  "rm.availableOne": "1 account available",
+  "rm.availableMany": "{count} accounts available",
+  "rm.outOfStock": "Out of stock",
+  "srv.ready.outOfStock": "This Ready Made account is out of stock. You have not been charged.",
 } as const;

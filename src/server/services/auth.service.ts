@@ -7,7 +7,6 @@ import { generateToken, hashToken } from "@/server/auth/tokens";
 import { db, isUniqueViolation } from "@/server/db";
 import { sendEmail, type EmailMessage } from "@/server/email/mailer";
 import {
-  accountExistsEmail,
   emailChangeConfirmEmail,
   emailChangedEmail,
   emailChangeRequestedEmail,
@@ -15,7 +14,6 @@ import {
   maskEmail,
   passwordChangedEmail,
   passwordResetEmail,
-  verificationEmail,
 } from "@/server/email/templates";
 import { env } from "@/server/env";
 import { platformCurrency } from "./currency";
@@ -25,16 +23,16 @@ import { logSecurityEvent } from "./security-log";
  * Authentication business logic. Framework-free (no cookies/headers): server
  * actions call these and handle cookies/redirects; tests call them directly.
  *
- * Anti-enumeration: registration, resend-verification and forgot-password
- * return the same result whether or not the email is registered. Login only
- * reveals "unverified"/"suspended" after the correct password was supplied.
+ * Signup needs no email confirmation: a new account can log in straight away
+ * (registration signs it in). Forgot-password still answers the same whether
+ * or not the email is registered; login only reveals "suspended" after the
+ * correct password was supplied.
  */
 
-const VERIFICATION_TTL_HOURS = 24;
 const RESET_TTL_MINUTES = 30;
 const EMAIL_CHANGE_TTL_HOURS = 24;
 
-type TokenPurpose = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "EMAIL_CHANGE";
+type TokenPurpose = "PASSWORD_RESET" | "EMAIL_CHANGE";
 export type TokenFailure = "invalid" | "expired" | "used";
 type Limited = { ok: false; code: "rate_limited"; retryAfterSeconds: number };
 
@@ -106,27 +104,22 @@ async function consumeToken(token: string, purpose: TokenPurpose) {
 
 /* ---------------------------------------------------------- registration -- */
 
-export type RegisterResult = { ok: true } | Limited;
+export type RegisterResult =
+  | { ok: true; session: { token: string; expiresAt: Date; persistent: boolean } }
+  | { ok: false; code: "email_taken" }
+  | Limited;
 
+/** Creates the account (with its wallet) and signs it in — no email confirmation step. */
 export async function register(
   input: { name: string; email: string; password: string },
   ctx: RequestContext,
 ): Promise<RegisterResult> {
-  const limited = await checkLimits([
-    ...ipCheck(ctx, "register", RATE_LIMITS.registerPerIp),
-    [`email:addr:${input.email}`, RATE_LIMITS.emailPerAddress],
-  ]);
+  const limited = await checkLimits(ipCheck(ctx, "register", RATE_LIMITS.registerPerIp));
   if (limited) return limited;
 
-  const existing = await findUserByEmail(input.email);
-  if (existing) {
-    // Same response as a new signup; the owner is told by email instead.
-    await trySend(accountExistsEmail(existing.email, existing.name, url("/login"), url("/forgot-password")), "account-exists");
-    return { ok: true };
-  }
+  if (await findUserByEmail(input.email)) return { ok: false, code: "email_taken" };
 
   const passwordHash = await hashPassword(input.password);
-
   let userId: string;
   try {
     const user = await db().user.create({
@@ -134,6 +127,7 @@ export async function register(
         name: input.name,
         email: input.email,
         passwordHash,
+        emailVerifiedAt: new Date(),
         // Every account gets exactly one wallet, created with the user.
         wallet: { create: { currency: platformCurrency().code } },
       },
@@ -141,45 +135,21 @@ export async function register(
     });
     userId = user.id;
   } catch (error) {
-    // Email taken by a concurrent signup → behave as "already exists".
-    if (isUniqueViolation(error) && (await findUserByEmail(input.email))) return { ok: true };
+    // Email taken by a concurrent signup.
+    if (isUniqueViolation(error)) return { ok: false, code: "email_taken" };
     throw error;
   }
 
-  const token = await issueToken(userId, "EMAIL_VERIFICATION", VERIFICATION_TTL_HOURS * 3_600_000);
-  await trySend(verificationEmail(input.email, input.name, url("/verify-email", token), VERIFICATION_TTL_HOURS), "verification");
-  return { ok: true };
-}
-
-export async function resendVerification(email: string, ctx: RequestContext): Promise<{ ok: true } | Limited> {
-  const limited = await checkLimits([
-    ...ipCheck(ctx, "email", RATE_LIMITS.emailPerIp),
-    [`email:addr:${email}`, RATE_LIMITS.emailPerAddress],
-  ]);
-  if (limited) return limited;
-  const user = await findUserByEmail(email);
-  if (user && !user.emailVerifiedAt && user.status === "ACTIVE") {
-    const token = await issueToken(user.id, "EMAIL_VERIFICATION", VERIFICATION_TTL_HOURS * 3_600_000);
-    await trySend(verificationEmail(user.email, user.name, url("/verify-email", token), VERIFICATION_TTL_HOURS), "verification");
-  }
-  return { ok: true };
-}
-
-export async function verifyEmail(token: string): Promise<{ ok: true } | { ok: false; reason: TokenFailure }> {
-  const result = await consumeToken(token, "EMAIL_VERIFICATION");
-  if (!result.ok) return result;
-  await db().user.updateMany({
-    where: { id: result.userId, emailVerifiedAt: null },
-    data: { emailVerifiedAt: new Date() },
-  });
-  return { ok: true };
+  const session = await createSession(userId, { persistent: false, ip: ctx.ip, userAgent: ctx.userAgent });
+  await logSecurityEvent("register", { userId, ip: ctx.ip });
+  return { ok: true, session };
 }
 
 /* ----------------------------------------------------------------- login -- */
 
 export type LoginResult =
   | { ok: true; session: { token: string; expiresAt: Date; persistent: boolean } }
-  | { ok: false; code: "invalid" | "unverified" | "suspended" }
+  | { ok: false; code: "invalid" | "suspended" }
   | Limited;
 
 export async function login(
@@ -206,7 +176,6 @@ export async function login(
     await logSecurityEvent("login_blocked", { userId: user.id, ip: ctx.ip, detail: "account suspended" });
     return { ok: false, code: "suspended" };
   }
-  if (!user.emailVerifiedAt) return { ok: false, code: "unverified" };
 
   await resetRateLimit(emailKey);
   if (needsRehash(user.passwordHash)) {
@@ -238,14 +207,11 @@ export async function resetPassword(token: string, password: string): Promise<{ 
   const result = await consumeToken(token, "PASSWORD_RESET");
   if (!result.ok) return result;
   const now = new Date();
-  const current = await db().user.findUniqueOrThrow({ where: { id: result.userId }, select: { emailVerifiedAt: true } });
   const user = await db().user.update({
     where: { id: result.userId },
     data: {
       passwordHash: await hashPassword(password),
       passwordChangedAt: now,
-      // Receiving the reset email proves the inbox, so the email is verified.
-      emailVerifiedAt: current.emailVerifiedAt ?? now,
     },
     select: { email: true, name: true },
   });
