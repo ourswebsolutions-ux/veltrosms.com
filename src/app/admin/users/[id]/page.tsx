@@ -31,6 +31,7 @@ import {
 import { requireAdminPage } from "@/server/admin/guard";
 import { listAdminOrders, listAdminPayments, userLedger } from "@/server/admin/orders";
 import { getUserDetail } from "@/server/admin/users";
+import { ServiceAvatar } from "@/components/ui/CatalogVisuals";
 
 export const metadata: Metadata = { title: "User" };
 
@@ -211,7 +212,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
           empty={<EmptyState compact icon="phone" title="No orders" />}
           columns={[
             { header: "Order", cell: (o) => <Link href={`/admin/orders/${o.id}`} className="font-mono text-primary hover:underline">#{o.id.slice(0, 8)}</Link> },
-            { header: "Service", cell: (o) => `${o.service.name} · ${o.country.name}` },
+            { header: "Service", cell: (o) => <span className="flex items-center gap-2"><ServiceAvatar logo={o.service.logo} size={20} />{o.service.name} · {o.country.name}</span> },
             { header: "Status", cell: (o) => <OrderStatus status={o.status} /> },
             { header: "Amount", className: "text-end tabular-nums", cell: (o) => formatPrice(o.price, o.currency) },
             { header: "Date", className: "whitespace-nowrap text-fg-muted", cell: (o) => formatShortDateTime(o.createdAt) },

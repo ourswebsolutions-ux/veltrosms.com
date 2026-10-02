@@ -4,7 +4,7 @@ import { ActionButton, CustomMarginDialog } from "@/components/admin/AdminForms"
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { CountryFlag } from "@/components/ui/CatalogVisuals";
+import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
 import { formatPrice, formatShortDateTime } from "@/lib/format";
@@ -56,7 +56,7 @@ export default async function AdminCustomMarginsPage() {
         rowKey={(r) => String(r.id)}
         empty={<EmptyState compact icon="trendingUp" title="No custom margins" description={`Every service and country uses the global minimum margin (${global}).`} />}
         columns={[
-          { header: "Service", className: "font-medium", cell: (r) => r.service.name },
+          { header: "Service", className: "font-medium", cell: (r) => <span className="flex items-center gap-2"><ServiceAvatar logo={r.service.logo} size={20} />{r.service.name}</span> },
           {
             header: "Country",
             cell: (r) => (

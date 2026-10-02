@@ -14,7 +14,7 @@ export const siteConfig = {
   description:
     "Virtual phone numbers for receiving SMS verification codes from popular services worldwide.",
   tagline: "Receive SMS verification codes online",
-  supportEmail: "support@example.com",
+  supportEmail: "Support@virtumsg.com",
   /**
    * Customer-support WhatsApp (international format). The single default for
    * every WhatsApp contact on the site — top-up help and Ready Made delivery.

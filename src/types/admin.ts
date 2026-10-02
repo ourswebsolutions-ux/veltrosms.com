@@ -36,7 +36,7 @@ export type AdminUserDetail = AdminUserRow & {
 export type AdminOrderRow = {
   id: string;
   user: { id: string; email: string };
-  service: { name: string; slug: string };
+  service: { name: string; slug: string; logo: string };
   country: { name: string; iso2: string | null };
   phoneNumber: string | null;
   status: OrderStatus;

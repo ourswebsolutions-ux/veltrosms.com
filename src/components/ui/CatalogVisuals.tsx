@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/cn";
+import { GENERIC_SERVICE_ICON } from "@/lib/generic-service-icon";
 
 /**
  * SVG country flag via the flag-icons stylesheet (imported once in the root
@@ -39,60 +40,33 @@ export function CountryFlag({
 }
 
 /**
- * Service avatar: the real logo for well-known services (see
- * src/lib/service-logos.ts), otherwise a letter on the service colour. It is
- * decorative — the service name is always shown next to it.
+ * Service icon: the brand logo, category badge or neutral app badge chosen
+ * for the service code (src/lib/service-logos.ts) — never a letter. It is
+ * decorative: the service name is always shown next to it.
  */
 export function ServiceAvatar({
-  name,
-  color,
   logo,
   size = 28,
   className,
 }: {
-  name: string;
-  color: string;
-  /** /service-logos/….svg, or null/undefined for the letter avatar. */
+  /** Kept for callers; the icon comes from `logo`. */
+  name?: string;
+  color?: string;
+  /** /service-logos/….svg; missing → the neutral app badge. */
   logo?: string | null;
   size?: number;
   className?: string;
 }) {
-  if (logo) {
-    return (
-      <Image
-        src={logo}
-        alt=""
-        aria-hidden="true"
-        width={size}
-        height={size}
-        unoptimized
-        className={cn("block shrink-0 rounded-full object-contain", className)}
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  const light = isLight(color);
   return (
-    <span
-      className={cn("inline-flex shrink-0 items-center justify-center rounded-full font-bold", className)}
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.46,
-        background: color,
-        color: light ? "#22252d" : "#fff",
-      }}
+    <Image
+      src={logo || GENERIC_SERVICE_ICON}
+      alt=""
       aria-hidden="true"
-    >
-      {name.charAt(0).toUpperCase()}
-    </span>
+      width={size}
+      height={size}
+      unoptimized
+      className={cn("block shrink-0 rounded-full object-contain", className)}
+      style={{ width: size, height: size }}
+    />
   );
-}
-
-function isLight(hex: string): boolean {
-  const n = parseInt(hex.slice(1), 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-  return 0.299 * r + 0.587 * g + 0.114 * b > 186;
 }

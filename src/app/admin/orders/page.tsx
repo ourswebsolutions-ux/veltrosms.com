@@ -14,6 +14,7 @@ import { formatPhone, formatPrice, formatShortDateTime } from "@/lib/format";
 import { db } from "@/server/db";
 import { requireAdminPage } from "@/server/admin/guard";
 import { listAdminOrders } from "@/server/admin/orders";
+import { ServiceAvatar } from "@/components/ui/CatalogVisuals";
 
 export const metadata: Metadata = { title: "Orders" };
 
@@ -63,7 +64,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
         columns={[
           { header: "Order", cell: (o) => <Link href={`/admin/orders/${o.id}`} className="font-mono text-primary hover:underline">#{o.id.slice(0, 8)}</Link> },
           { header: "User", cell: (o) => <Link href={`/admin/users/${o.user.id}`} className="block max-w-48 truncate hover:text-primary">{o.user.email}</Link> },
-          { header: "Service", cell: (o) => <span className="block max-w-56 truncate">{o.service.name} · {o.country.name}</span> },
+          { header: "Service", cell: (o) => <span className="flex max-w-56 items-center gap-2"><ServiceAvatar logo={o.service.logo} size={20} /><span className="truncate">{o.service.name} · {o.country.name}</span></span> },
           { header: "Number", className: "font-mono text-xs whitespace-nowrap", desktopOnly: true, cell: (o) => (o.phoneNumber ? formatPhone(o.phoneNumber) : "—") },
           { header: "Status", cell: (o) => <OrderStatus status={o.status} /> },
           { header: "SMS", className: "text-end tabular-nums", desktopOnly: true, cell: (o) => o.smsCount },

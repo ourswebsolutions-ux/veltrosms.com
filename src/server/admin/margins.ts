@@ -7,6 +7,7 @@ import { getSetting } from "@/server/services/settings.service";
 import { audit } from "./audit";
 import type { AdminActor } from "./guard";
 import type { AdminResult } from "./users";
+import { serviceLogo } from "@/lib/service-logos";
 
 /**
  * Admin → Custom Margins: a minimum margin for one service in one country that
@@ -20,7 +21,7 @@ export type MarginInput = { serviceId: number; countryId: number; minMargin: str
 
 export type MarginRow = {
   id: number;
-  service: { id: number; name: string };
+  service: { id: number; name: string; logo: string };
   country: { id: number; name: string; iso2: string | null };
   /** Minor units of the platform currency. */
   minMargin: number;
@@ -35,7 +36,7 @@ const MARGIN_RE = /^\d{1,3}(\.\d{1,4})?$/;
 export async function listMarginRules(): Promise<{ rules: MarginRow[]; globalMinMargin: number; currency: string }> {
   const [rows, global] = await Promise.all([
     db().serviceCountryMargin.findMany({
-      include: { service: { select: { id: true, name: true } }, country: { select: { id: true, name: true, iso2: true } } },
+      include: { service: { select: { id: true, name: true, providerCode: true } }, country: { select: { id: true, name: true, iso2: true } } },
       orderBy: [{ service: { name: "asc" } }, { country: { name: "asc" } }],
     }),
     getSetting("pricing"),
@@ -51,7 +52,7 @@ export async function listMarginRules(): Promise<{ rules: MarginRow[]; globalMin
       const p = prices.find((x) => x.serviceId === r.serviceId && x.countryId === r.countryId);
       return {
         id: r.id,
-        service: r.service,
+        service: { id: r.service.id, name: r.service.name, logo: serviceLogo(r.service.providerCode) },
         country: r.country,
         minMargin: toMinor(r.minMargin),
         offer: p

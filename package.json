@@ -24,6 +24,7 @@
     "admin:role": "tsx --conditions=react-server scripts/admin-role.ts",
     "wallet:adjust": "tsx --conditions=react-server scripts/wallet-adjust.ts",
     "provider:check": "tsx --conditions=react-server scripts/provider-check.ts",
+    "logos:map": "tsx --conditions=react-server scripts/map-service-logos.ts",
     "logos:generate": "node scripts/generate-service-logos.mjs"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@iconify-json/logos": "^1.2.15",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.4",
     "@types/nodemailer": "^8.0.2",

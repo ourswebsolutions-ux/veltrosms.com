@@ -8,6 +8,7 @@ import type { AdminLedgerRow, AdminOrderRow, AdminPage, AdminPaymentRow } from "
 import { audit } from "./audit";
 import type { AdminActor } from "./guard";
 import type { AdminResult } from "./users";
+import { serviceLogo } from "@/lib/service-logos";
 
 /** Admin views of orders and payments, plus their provider-backed actions. */
 
@@ -39,7 +40,7 @@ const orderSelect = {
   completedAt: true,
   createdAt: true,
   user: { select: { id: true, email: true } },
-  service: { select: { name: true, slug: true } },
+  service: { select: { name: true, slug: true, providerCode: true } },
   country: { select: { name: true, iso2: true } },
   _count: { select: { sms: true } },
 } satisfies Prisma.OrderSelect;
@@ -47,7 +48,7 @@ const orderSelect = {
 const toOrderRow = (o: Prisma.OrderGetPayload<{ select: typeof orderSelect }>): AdminOrderRow => ({
   id: o.id,
   user: o.user,
-  service: o.service,
+  service: { name: o.service.name, slug: o.service.slug, logo: serviceLogo(o.service.providerCode) },
   country: o.country,
   phoneNumber: o.phoneNumber,
   status: o.status.toLowerCase() as OrderStatus,
