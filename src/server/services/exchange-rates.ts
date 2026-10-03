@@ -2,8 +2,9 @@ import "server-only";
 import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { env } from "@/server/env";
-import { DISPLAY_CURRENCIES, type DisplayCurrencyCode, type DisplayRate, type DisplayRates } from "@/lib/display-currency";
+import { DISPLAY_CURRENCIES, effectiveRate, type DisplayCurrencyCode, type DisplayRate, type DisplayRates } from "@/lib/display-currency";
 import { platformCurrency } from "./currency";
+import { getSetting } from "./settings.service";
 
 /**
  * Exchange rates for DISPLAY ONLY (the website currency selector). Nothing
@@ -18,6 +19,11 @@ import { platformCurrency } from "./currency";
  *      feed is down;
  *   3. otherwise no rate: that currency is shown as unavailable and prices
  *      stay in the platform currency. A rate is never invented.
+ *
+ * On top of that base rate the admin's conversion tax / markup for the
+ * currency (Admin → Settings, `currency_markup`) is ADDED TO THE RATE:
+ *   effective rate = base rate + markup;  converted = amount × effective rate.
+ * Every converted amount on the site uses this effective rate.
  */
 
 const TTL_MS = 6 * 60 * 60 * 1000;
@@ -78,15 +84,29 @@ export async function getDisplayRates(): Promise<DisplayRates> {
   const rates: DisplayRates["rates"] = {};
   const targets = DISPLAY_CURRENCIES.map((c) => c.code).filter((c) => c !== base);
   const needLive = targets.some((c) => !fixedRate(c));
-  const feed = await liveRates(base, needLive);
+  const [feed, markups] = await Promise.all([liveRates(base, needLive), getSetting("currency_markup")]);
   for (const code of targets) {
     const fixed = fixedRate(code);
+    const markup = Number((markups as Partial<Record<DisplayCurrencyCode, string>>)[code] ?? "0") || 0;
     let rate: DisplayRate | null = null;
-    if (fixed) rate = { currency: code, rate: fixed, source: "configured", updatedAt: null };
-    else if (feed?.rates[code]) rate = { currency: code, rate: feed.rates[code], source: "live", updatedAt: feed.updatedAt };
+    const make = (baseRate: number, source: DisplayRate["source"], updatedAt: string | null): DisplayRate => ({
+      currency: code,
+      rate: effectiveRate(baseRate, markup),
+      baseRate,
+      markup,
+      source,
+      updatedAt,
+    });
+    if (fixed) rate = make(fixed, "configured", null);
+    else if (feed?.rates[code]) rate = make(feed.rates[code], "live", feed.updatedAt);
     if (rate) rates[code] = rate;
   }
   return { base, rates };
+}
+
+/** The effective display rate (base + conversion markup) for one currency, or null when it has no rate. */
+export async function getEffectiveRate(currency: DisplayCurrencyCode): Promise<DisplayRate | null> {
+  return (await getDisplayRates()).rates[currency] ?? null;
 }
 
 /** For tests. */

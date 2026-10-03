@@ -18,6 +18,7 @@ import { dirOf } from "@/i18n/config";
 import { getLocale, getMessages, getT } from "@/i18n/server";
 import { themeInitScript } from "@/lib/theme-script";
 import { getDisplayRates } from "@/server/services/exchange-rates";
+import { isChatbotActive } from "@/server/services/chatbot-subscription";
 
 const manrope = Manrope({
   subsets: ["latin", "latin-ext"],
@@ -63,11 +64,13 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   // Display-only exchange rates for the currency selector (cached; never used for charging).
-  const [rates, locale, messages, t] = await Promise.all([
+  const [rates, locale, messages, t, chatbotActive] = await Promise.all([
     getDisplayRates(),
     getLocale(),
     getMessages(),
     getT(),
+    // The global chatbot subscription is checked on the server for every page; when inactive the widget isn't sent at all.
+    isChatbotActive().catch(() => false),
   ]);
   return (
     // data-theme is set by themeInitScript before hydration.
@@ -95,7 +98,7 @@ export default async function RootLayout({
               {children}
             </div>
             <Footer />
-            <LiveChatWidget />
+            {chatbotActive && <LiveChatWidget />}
           </DisplayCurrencyProvider>
         </I18nProvider>
       </body>

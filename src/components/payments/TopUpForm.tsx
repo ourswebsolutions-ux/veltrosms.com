@@ -12,6 +12,7 @@ import { createTopUpAction } from "@/server/actions/payments";
 import type { TopUpResult } from "@/server/services/payment.service";
 import type { TopUpOptions } from "@/types/account";
 import { useT } from "@/i18n/client";
+import { ConvertedAmount, Money } from "@/components/currency/DisplayCurrency";
 
 const KIND_ICON: Record<string, IconName> = {
   card: "wallet",
@@ -145,6 +146,7 @@ export function TopUpForm({ options, balance }: { options: TopUpOptions; balance
             ? invalid
             : t("topup.fromTo", { min: formatPrice(options.min, options.currency), max: formatPrice(options.max, options.currency) })}
         </p>
+        <ConvertedAmount amount={invalid ? null : amount} currency={options.currency} className="mt-1" />
       </fieldset>
 
       <fieldset>
@@ -187,7 +189,7 @@ export function TopUpForm({ options, balance }: { options: TopUpOptions; balance
 
       <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 rounded-xl bg-surface-muted p-4 text-[15px]">
         <dt className="text-fg-muted">{t("topup.added")}</dt>
-        <dd className="text-end font-medium tabular-nums">{amount !== null && !invalid ? formatPrice(amount, options.currency) : "—"}</dd>
+        <dd className="text-end font-medium tabular-nums">{amount !== null && !invalid ? <Money amount={amount} currency={options.currency} variant="stack" className="items-end" /> : "—"}</dd>
         <dt className="text-fg-muted">
           {t("topup.fee")}
           {hasFee && (
@@ -200,11 +202,11 @@ export function TopUpForm({ options, balance }: { options: TopUpOptions; balance
         <dd className="text-end tabular-nums">{quote ? (quote.fee ? formatPrice(quote.fee, options.currency) : t("topup.free")) : "—"}</dd>
         <dt className="border-t border-line pt-2 font-semibold">{t("topup.total")}</dt>
         <dd className="border-t border-line pt-2 text-end text-lg font-semibold text-primary tabular-nums">
-          {quote ? formatPrice(quote.total, options.currency) : "—"}
+          {quote ? <Money amount={quote.total} currency={options.currency} variant="stack" className="items-end" /> : "—"}
         </dd>
         <dt className="text-[13px] text-fg-muted">{t("topup.balanceAfter")}</dt>
         <dd className="text-end text-[13px] text-fg-muted tabular-nums">
-          {amount !== null && !invalid ? formatPrice(balance + amount, options.currency) : "—"}
+          {amount !== null && !invalid ? <Money amount={balance + amount} currency={options.currency} variant="both" /> : "—"}
         </dd>
       </dl>
 

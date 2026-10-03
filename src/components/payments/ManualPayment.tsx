@@ -16,6 +16,7 @@ import { createManualTopUpAction } from "@/server/actions/payments";
 import type { TopUpResult } from "@/server/services/payment.service";
 import type { ManualPaymentDetails, TopUpOptions } from "@/types/account";
 import { useT } from "@/i18n/client";
+import { ConvertedAmount, Money } from "@/components/currency/DisplayCurrency";
 
 const METHODS = [
   { id: "easypaisa", label: "Easypaisa" },
@@ -175,6 +176,7 @@ export function ManualTopUpForm({ options, balance }: { options: TopUpOptions; b
           <Input {...p} value={amountInput} onChange={(e) => setAmountInput(e.target.value)} inputMode="decimal" autoComplete="off" name="amount" placeholder={t("topup.amountPlaceholder")} className="text-lg font-semibold tabular-nums" />
         )}
       </Field>
+      <ConvertedAmount amount={amountError ? null : amount} currency={options.currency} className="-mt-3" />
 
       <fieldset>
         <legend className="mb-2 text-sm font-medium">{t("topup.paidWith")}</legend>
@@ -212,7 +214,7 @@ export function ManualTopUpForm({ options, balance }: { options: TopUpOptions; b
 
       {amount !== null && !amountError && (
         <p className="rounded-lg bg-surface-muted px-4 py-3 text-sm">
-          {t("topup.afterApproval")} <b className="tabular-nums">{formatPrice(balance + amount, options.currency)}</b>
+          {t("topup.afterApproval")} <Money amount={balance + amount} currency={options.currency} variant="both" className="font-bold tabular-nums" />
         </p>
       )}
       {error && <Alert tone="error">{error}</Alert>}

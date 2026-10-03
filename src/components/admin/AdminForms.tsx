@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useResultToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
+import { effectiveRate, formatConverted, type DisplayRates } from "@/lib/display-currency";
 import { MONEY_SCALE, parseAmount } from "@/lib/money";
 import type { FormState } from "@/types/forms";
 
@@ -668,5 +669,82 @@ export function CustomMarginDialog({
         </form>
       </Modal>
     </>
+  );
+}
+
+/**
+ * Conversion tax / markup per display currency. It is ADDED TO THE EXCHANGE
+ * RATE (1 USD = base + tax) and then used for every converted price on the
+ * site — not added to a product price. Display only; charges stay in USD.
+ */
+export function CurrencyMarkupForm({ action, rates, markup }: { action: Action; rates: DisplayRates; markup: Record<"PKR" | "INR" | "BDT", string> }) {
+  const [state, run] = useFormAction(action);
+  useResultToast(state);
+  const [values, setValues] = useState(markup);
+  const codes = ["PKR", "INR", "BDT"] as const;
+  const num = (v: string) => {
+    const n = Number(v.trim().replace(",", ".") || "0");
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  };
+  const fmtRate = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 6 });
+  return (
+    <form action={run} className="space-y-4">
+      <div className="overflow-hidden rounded-xl border border-line">
+        <div className="hidden grid-cols-[5rem_1fr_minmax(7rem,9rem)_1fr] gap-3 border-b border-line bg-surface-muted px-4 py-2 text-[13px] text-fg-muted sm:grid">
+          <span>Currency</span>
+          <span className="text-end">Base rate (1 {rates.base} =)</span>
+          <span>Conversion tax</span>
+          <span className="text-end">Effective rate</span>
+        </div>
+        {codes.map((code) => {
+          const r = rates.rates[code];
+          const tax = num(values[code]);
+          const effective = r && tax !== null ? effectiveRate(r.baseRate, tax) : null;
+          return (
+            <div
+              key={code}
+              className="grid grid-cols-2 items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 sm:grid-cols-[5rem_1fr_minmax(7rem,9rem)_1fr]"
+            >
+              <span className="font-semibold">{code}</span>
+              <span className="text-end text-sm tabular-nums sm:text-[15px]">
+                <span className="text-fg-muted sm:hidden">Base: </span>
+                {r ? fmtRate(r.baseRate) : <span className="text-fg-muted">No rate right now</span>}
+                {r && <span className="block text-xs text-fg-muted">{r.source === "live" ? "live" : "fixed (server setting)"}</span>}
+              </span>
+              <label className="col-span-2 flex items-center gap-2 sm:col-span-1">
+                <span className="text-sm text-fg-muted sm:sr-only">Conversion tax ({code})</span>
+                <Input
+                  name={code}
+                  value={values[code]}
+                  onChange={(e) => setValues((v) => ({ ...v, [code]: e.target.value }))}
+                  inputMode="decimal"
+                  maxLength={12}
+                  aria-label={`${code} conversion tax`}
+                  aria-invalid={tax === null ? true : undefined}
+                  className="h-10 min-w-0 flex-1 tabular-nums"
+                />
+              </label>
+              <span className="col-span-2 text-sm tabular-nums sm:col-span-1 sm:text-end sm:text-[15px]">
+                <span className="text-fg-muted sm:hidden">Effective: </span>
+                {effective !== null ? (
+                  <>
+                    <b>{fmtRate(effective)}</b>
+                    <span className="block text-xs text-fg-muted">$10 → {formatConverted(100_000, { currency: code, rate: effective })}</span>
+                  </>
+                ) : (
+                  "—"
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[13px] leading-relaxed text-fg-muted">
+        Effective rate = base rate + conversion tax. Example: base 282 + tax 5 = 287, so $10 shows as Rs 2,870 (not Rs 2,825). It only changes the
+        converted amounts customers see; prices, charges and balances stay in {rates.base}. Use 0 for no tax.
+      </p>
+      <FormMessage state={state} />
+      <SubmitButton>Save conversion tax</SubmitButton>
+    </form>
   );
 }

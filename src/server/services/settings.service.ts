@@ -23,14 +23,28 @@ const PricingSchema = z.object({
   minMargin: z.string().regex(/^\d{1,6}(\.\d{1,4})?$/),
 });
 
+/**
+ * Conversion tax / markup per display currency, in units of that currency,
+ * ADDED TO THE EXCHANGE RATE (1 USD = base + markup). Display only — never
+ * changes a stored price or a charge. "0" = the plain exchange rate.
+ */
+const markup = z.string().regex(/^\d{1,6}(\.\d{1,4})?$/);
+const CurrencyMarkupSchema = z.object({ PKR: markup, INR: markup, BDT: markup });
+
+/** The one global chatbot subscription: when it was last activated and when it lapses (ISO, server time). */
+const ChatbotSubscriptionSchema = z.object({ activatedAt: z.iso.datetime().nullable(), expiresAt: z.iso.datetime().nullable() });
+
 export type MaintenanceSetting = z.infer<typeof MaintenanceSchema>;
 export type ManualPaymentSetting = z.infer<typeof ManualPaymentSchema>;
 export type PricingSetting = z.infer<typeof PricingSchema>;
+export type CurrencyMarkupSetting = z.infer<typeof CurrencyMarkupSchema>;
 
 const SCHEMAS = {
   maintenance: MaintenanceSchema,
   manual_payment: ManualPaymentSchema,
   pricing: PricingSchema,
+  currency_markup: CurrencyMarkupSchema,
+  chatbot_subscription: ChatbotSubscriptionSchema,
 } as const;
 type Key = keyof typeof SCHEMAS;
 type Value<K extends Key> = z.infer<(typeof SCHEMAS)[K]>;
@@ -39,6 +53,8 @@ const DEFAULTS: { [K in Key]: () => Value<K> } = {
   maintenance: () => ({ enabled: false, message: "" }),
   // The business's receiving account (public payment details, not secrets). Admins can change them.
   manual_payment: () => ({ accountName: "Muhammad Usman", accountNumber: "03246623395", whatsapp: siteConfig.supportWhatsApp, note: "" }),
+  currency_markup: () => ({ PKR: "0", INR: "0", BDT: "0" }),
+  chatbot_subscription: () => ({ activatedAt: null, expiresAt: null }),
   pricing: () => ({ markupPercent: String(env().PRICE_MARKUP_PERCENT), minMargin: String(env().PRICE_MIN_MARGIN) }),
 };
 

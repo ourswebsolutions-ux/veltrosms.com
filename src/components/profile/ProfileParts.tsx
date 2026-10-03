@@ -12,7 +12,7 @@ export function StatCard({
   icon: IconName;
   label: string;
   value: ReactNode;
-  hint?: string;
+  hint?: ReactNode;
   className?: string;
 }) {
   return (

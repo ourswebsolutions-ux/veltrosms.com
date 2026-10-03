@@ -142,3 +142,21 @@ export function ChargeRows({ amount, currency, priceClassName = "font-semibold t
     </>
   );
 }
+
+/**
+ * "≈ Rs 28,700 PKR" under an amount being typed (top-up): the amount in the
+ * visitor's display currency at the effective rate. Nothing when the display
+ * currency is the base currency or the amount isn't valid yet. Display only.
+ */
+export function ConvertedAmount({ amount, currency, className }: { amount: number | null; currency: string; className?: string }) {
+  const { convert, rate } = useDisplayCurrency();
+  const t = useT();
+  const converted = amount !== null && amount > 0 ? convert(amount, currency) : null;
+  if (!converted || !rate) return null;
+  return (
+    <p className={cn("text-[15px] font-semibold text-fg tabular-nums", className)} aria-live="polite">
+      ≈ {converted} <span className="text-xs font-medium text-fg-muted">{rate.currency}</span>
+      <span className="block text-xs font-normal text-fg-muted">{t("money.approxNote")}</span>
+    </p>
+  );
+}

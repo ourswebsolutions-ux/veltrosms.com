@@ -164,9 +164,10 @@ describe("login", () => {
     expect(user?.email).toBe(EMAIL);
     expect(user?.name).toBe("Ada Lovelace");
     expect(r.session.expiresAt.getTime()).toBeGreaterThan(Date.now() + 29 * 86_400_000);
-    // The cookie token is not stored in plain form.
-    const stored = await db().session.findFirstOrThrow();
-    expect(stored.tokenHash).toBe(hashToken(r.session.token));
+    // The cookie token is not stored in plain form (signup also opened a session, so look this one up by its hash).
+    const stored = await db().session.findFirst({ where: { tokenHash: hashToken(r.session.token) } });
+    expect(stored).not.toBeNull();
+    expect(await db().session.count({ where: { tokenHash: r.session.token } })).toBe(0);
   });
 
   it("uses a short server-side expiry without 'remember me'", async () => {

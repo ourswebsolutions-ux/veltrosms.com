@@ -10,7 +10,8 @@ import { setPricingRules, type PricingRules } from "@/server/services/pricing-ru
 import { repriceCustomMargins } from "./margins";
 import { checkProviderHealth, invalidateProviderBalance } from "@/server/services/provider-health.service";
 import { maskAddress } from "@/server/services/security-log";
-import { getSetting, saveSetting, whatsappDigits, type MaintenanceSetting, type ManualPaymentSetting } from "@/server/services/settings.service";
+import { getSetting, saveSetting, whatsappDigits, type CurrencyMarkupSetting, type MaintenanceSetting, type ManualPaymentSetting } from "@/server/services/settings.service";
+import { getDisplayRates } from "@/server/services/exchange-rates";
 import type { AdminPage } from "@/types/admin";
 import { audit } from "./audit";
 import type { AdminActor } from "./guard";
@@ -595,11 +596,18 @@ export async function listLogs(kind: LogKind, filter: LogFilter = {}): Promise<A
 /* -------------------------------------------------------------- settings -- */
 
 export async function getPlatformSettings() {
-  const [maintenance, manual] = await Promise.all([getSetting("maintenance"), getSetting("manual_payment")]);
+  const [maintenance, manual, currencyMarkup, displayRates] = await Promise.all([
+    getSetting("maintenance"),
+    getSetting("manual_payment"),
+    getSetting("currency_markup"),
+    getDisplayRates(),
+  ]);
   const e = env();
   return {
     maintenance,
     manual,
+    currencyMarkup,
+    displayRates,
     info: {
       currency: e.PLATFORM_CURRENCY,
       smsProvider: e.SMS_PROVIDER,
@@ -629,6 +637,36 @@ export async function saveManualPayment(actor: AdminActor, input: ManualPaymentS
   const saved = await saveSetting("manual_payment", { accountName, accountNumber, whatsapp, note: input.note.trim() });
   await audit(actor, "manual_payment.update", { type: "setting", id: "manual_payment" }, true, { before, after: saved }, `Manual payment details changed to ${saved.accountName} · ${saved.accountNumber}`);
   return { ok: true, message: "Payment details saved." };
+}
+
+/** Max conversion tax / markup per currency (in units of that currency). */
+const MAX_MARKUP = 100_000;
+
+/**
+ * Conversion tax / markup per display currency: ADDED TO THE EXCHANGE RATE
+ * (1 USD = base + markup), then used for every converted amount on the site.
+ * Display only — stored prices, charges and the ledger are never affected.
+ */
+export async function saveCurrencyMarkup(actor: AdminActor, input: Record<"PKR" | "INR" | "BDT", string>): Promise<AdminResult> {
+  const clean = {} as CurrencyMarkupSetting;
+  for (const code of ["PKR", "INR", "BDT"] as const) {
+    const v = input[code].trim().replace(",", ".") || "0";
+    if (!/^\d{1,6}(\.\d{1,4})?$/.test(v) || Number(v) > MAX_MARKUP) {
+      return { ok: false, message: `Enter the ${code} conversion tax as a number from 0 to ${MAX_MARKUP.toLocaleString("en-US")} (up to 4 decimals), e.g. 5.` };
+    }
+    clean[code] = String(Number(v)); // "5.50" → "5.5", "007" → "7"
+  }
+  const before = await getSetting("currency_markup");
+  const saved = await saveSetting("currency_markup", clean);
+  await audit(
+    actor,
+    "currency_markup.update",
+    { type: "setting", id: "currency_markup" },
+    true,
+    { before, after: saved },
+    `Conversion tax set to PKR ${saved.PKR} · INR ${saved.INR} · BDT ${saved.BDT}`,
+  );
+  return { ok: true, message: "Conversion tax saved. Converted prices now use the new rates." };
 }
 
 /* ---------------------------------------------------------------- ledger -- */

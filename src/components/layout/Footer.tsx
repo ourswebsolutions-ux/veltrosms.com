@@ -5,6 +5,7 @@ import { Logo } from "./Logo";
 import { getT } from "@/i18n/server";
 import { Icon } from "@/components/icons";
 import { readyMadeContact } from "@/server/services/ready-made.service";
+import { ChatbotActivator } from "./ChatbotActivator";
 
 /**
  * Three rows, following the reference's information architecture:
@@ -71,6 +72,9 @@ export async function Footer() {
             ))}
           </ul>
         </div>
+        <p className="pb-4 text-[13px] text-fg-muted">
+          <ChatbotActivator />
+        </p>
       </PageContainer>
     </footer>
   );

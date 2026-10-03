@@ -10,7 +10,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { resolveDateRange } from "@/lib/date-range";
-import { formatPrice } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getOrderStats } from "@/server/services/account.service";
 import { getT } from "@/i18n/server";
@@ -74,9 +73,17 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/profi
             value={String(stats.payments.paid)}
             hint={
               stats.payments.paid
-                ? t("stats.added", {
-                    amount: formatPrice(stats.payments.paidAmount, stats.currency),
-                  })
+                ? (() => {
+                    // "{amount} added", with the amount shown in the visitor's currency too.
+                    const [before, after] = t("stats.added", { amount: "\u0000" }).split("\u0000");
+                    return (
+                      <>
+                        {before}
+                        <Money amount={stats.payments.paidAmount} currency={stats.currency} variant="both" />
+                        {after}
+                      </>
+                    );
+                  })()
                 : stats.payments.pending
                   ? t("stats.awaiting", { count: stats.payments.pending })
                   : undefined

@@ -10,7 +10,6 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
-import { formatPrice } from "@/lib/format";
 import { whatsappHref } from "@/lib/whatsapp";
 import { requireUser } from "@/server/auth/session";
 import { getAccountProfile, listTransactions } from "@/server/services/account.service";
@@ -83,7 +82,7 @@ export default async function TopUpPage() {
               </ul>
               {wa && (
                 <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
-                  <span className="min-w-0 flex-1 text-sm">
+                  <span className="min-w-48 flex-1 text-sm">
                     {t("topup.needHelp")}{" "}
                     <b className="whitespace-nowrap" dir="ltr">
                       {manual.whatsapp}
@@ -116,7 +115,7 @@ export default async function TopUpPage() {
               <li key={p.id} className="rounded-xl border border-primary-tint-border p-3 sm:flex sm:items-center sm:gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold tabular-nums">
-                    {formatPrice(p.amount, p.currency)} <span className="font-normal text-fg-muted">· {p.methodLabel}</span>
+                    <Money amount={p.amount} currency={p.currency} variant="both" /> <span className="font-normal text-fg-muted">· {p.methodLabel}</span>
                   </p>
                   <p className="text-[13px] text-fg-muted">
                     <bdi className="font-mono whitespace-nowrap">{p.transactionId ? `TID ${p.transactionId}` : p.reference}</bdi> ·{" "}

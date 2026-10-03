@@ -6,6 +6,7 @@ import type { PaymentListItem } from "@/types/account";
 import { PaymentStatusBadge } from "./PaymentStatus";
 import { getT } from "@/i18n/server";
 import { DateTime } from "@/components/ui/DateTime";
+import { Money } from "@/components/currency/DisplayCurrency";
 
 /** Top-up payments as a table on ≥ md and as stacked rows on phones. */
 export async function PaymentsTable({ payments }: { payments: PaymentListItem[] }) {
@@ -52,7 +53,9 @@ export async function PaymentsTable({ payments }: { payments: PaymentListItem[] 
                 {p.rejectionReason && <span className="block max-w-56 text-xs text-danger">{p.rejectionReason}</span>}
               </Td>
               <Td className="text-end text-sm text-fg-muted tabular-nums">{formatPrice(p.fee, p.currency)}</Td>
-              <Td className="pe-0 text-end font-medium tabular-nums">{formatPrice(p.amount, p.currency)}</Td>
+              <Td className="pe-0 text-end font-medium tabular-nums">
+                <Money amount={p.amount} currency={p.currency} variant="stack" className="items-end" />
+              </Td>
             </Tr>
           ))}
         </TBody>
@@ -64,7 +67,7 @@ export async function PaymentsTable({ payments }: { payments: PaymentListItem[] 
             <Link href={`/profile/top-up/${p.id}`} className="block rounded-xl border border-line p-3 hover:border-primary-tint-border">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-sm font-medium text-primary">{p.reference}</span>
-                <span className="font-semibold tabular-nums">{formatPrice(p.amount, p.currency)}</span>
+                <Money amount={p.amount} currency={p.currency} variant="stack" className="font-semibold tabular-nums" />
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[13px] text-fg-muted">
                 <PaymentStatusBadge status={p.status} manual={p.manual} />

@@ -8,6 +8,7 @@ import {
   saveMaintenance,
   savePricing,
   saveManualPayment,
+  saveCurrencyMarkup,
   setCatalogItemActive,
   setServicePopular,
   triggerCatalogSync,
@@ -210,6 +211,15 @@ export async function adminSaveManualPaymentAction(_prev: FormState, data: FormD
       note: field(data, "note").slice(0, 200),
     }),
   );
+}
+
+export async function adminSaveCurrencyMarkupAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const result = await run((a) =>
+    saveCurrencyMarkup(a, { PKR: field(data, "PKR").slice(0, 20), INR: field(data, "INR").slice(0, 20), BDT: field(data, "BDT").slice(0, 20) }),
+  );
+  // Every page shows converted prices: refresh them all, not only the admin panel.
+  if (result.status === "success") revalidatePath("/", "layout");
+  return result;
 }
 
 /* ------------------------------------------------------- manual top-ups -- */

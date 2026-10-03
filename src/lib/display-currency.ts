@@ -24,8 +24,16 @@ export const displayCurrencyInfo = (code: DisplayCurrencyCode) => DISPLAY_CURREN
 
 export type DisplayRate = {
   currency: DisplayCurrencyCode;
-  /** Units of `currency` per 1 unit of the base (platform) currency. */
+  /**
+   * EFFECTIVE rate: units of `currency` per 1 unit of the base (platform)
+   * currency, i.e. exchange rate + the admin's conversion tax/markup. This is
+   * the only rate used to show converted amounts.
+   */
   rate: number;
+  /** The exchange rate before the markup (configured or live). */
+  baseRate: number;
+  /** Admin conversion tax / markup added to the rate (0 = none). */
+  markup: number;
   /** "configured" = fixed operator rate (DISPLAY_<CODE>_RATE); "live" = public exchange-rate feed. */
   source: "configured" | "live";
   /** When the live rate was published (null for a configured rate). */
@@ -44,13 +52,35 @@ export type DisplayRates = {
  * 276.98 PKR → "Rs 554". Whole units from 10 up, two decimals below
  * ("₹2.52"). Signed amounts keep their sign ("−Rs 554").
  */
-export function formatConverted(minorUnits: number, rate: DisplayRate, opts: { signed?: boolean } = {}): string {
+export function formatConverted(minorUnits: number, rate: Pick<DisplayRate, "currency" | "rate">, opts: { signed?: boolean } = {}): string {
   const info = displayCurrencyInfo(rate.currency);
-  const value = (Math.abs(minorUnits) / MONEY_SCALE) * rate.rate;
-  const digits = value !== 0 && value < 10 ? 2 : 0;
-  const number = new Intl.NumberFormat(info.locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+  // Exact decimal arithmetic: amount (1/10,000 units) × rate (1/1,000,000 units) as integers,
+  // rounded half-up to cents — so $10 at 287 is exactly "2,870", never 2869.999….
+  const cents = convertToCents(Math.abs(minorUnits), rate.rate);
+  const digits = cents !== BigInt(0) && cents < BigInt(1000) ? 2 : 0;
+  const shown = digits === 2 ? cents : ((cents + BigInt(50)) / BigInt(100)) * BigInt(100);
+  const whole = shown / BigInt(100);
+  const fraction = String(shown % BigInt(100)).padStart(2, "0");
+  const number = new Intl.NumberFormat(info.locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(
+    `${whole}.${fraction}` as unknown as number, // Intl formats decimal strings exactly
+  );
   const sign = minorUnits < 0 ? "−" : opts.signed ? "+" : "";
   return ltr(`${sign}${info.symbol}${number}`);
+}
+
+const RATE_SCALE = 1_000_000;
+
+/** Rate as an integer of 1/1,000,000 units (rates are stored with at most 6 decimals). */
+export const rateToMicro = (rate: number) => Math.round(rate * RATE_SCALE);
+
+/** Effective rate = exchange rate + conversion tax/markup, added in exact decimal steps. */
+export const effectiveRate = (baseRate: number, markup: number) => (rateToMicro(baseRate) + rateToMicro(markup)) / RATE_SCALE;
+
+/** minorUnits (1/10,000 of the base currency) × rate, in hundredths of the display currency, rounded half-up. */
+export function convertToCents(minorUnits: number, rate: number): bigint {
+  const product = BigInt(Math.round(minorUnits)) * BigInt(rateToMicro(rate)); // 1e-4 × 1e-6 = 1e-10 units
+  const divisor = BigInt(MONEY_SCALE * RATE_SCALE / 100); // → hundredths
+  return (product + divisor / BigInt(2)) / divisor;
 }
 
 /** The original (charged) amount, e.g. "$2.00" or "+$2.00". */

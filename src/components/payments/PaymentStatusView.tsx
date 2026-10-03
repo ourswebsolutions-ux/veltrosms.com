@@ -16,6 +16,7 @@ import { PaymentStatusBadge } from "./PaymentStatus";
 import { useT } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { DateTime } from "@/components/ui/DateTime";
+import { Money } from "@/components/currency/DisplayCurrency";
 
 const POLL_MS = 4_000;
 /** Stop automatic polling after this long; "Check now" still works. */
@@ -216,11 +217,15 @@ export function PaymentStatusView({
           )}
         </dd>
         <dt className="text-fg-muted">{t("common.amount")}</dt>
-        <dd className="text-end tabular-nums">{money(payment.amount)}</dd>
+        <dd className="text-end tabular-nums">
+          <Money amount={payment.amount} currency={payment.currency} variant="stack" className="items-end" />
+        </dd>
         <dt className="text-fg-muted">{t("pay.fee")}</dt>
         <dd className="text-end tabular-nums">{payment.fee ? money(payment.fee) : t("topup.free")}</dd>
         <dt className="text-fg-muted">{t("common.total")}</dt>
-        <dd className="text-end font-semibold tabular-nums">{money(payment.total)}</dd>
+        <dd className="text-end font-semibold tabular-nums">
+          <Money amount={payment.total} currency={payment.currency} variant="stack" className="items-end" />
+        </dd>
         <dt className="text-fg-muted">{t("pay.submitted")}</dt>
         <dd className="text-end">
           <DateTime iso={payment.createdAt} />
@@ -236,7 +241,7 @@ export function PaymentStatusView({
           </>
         )}
         <dt className="border-t border-line pt-2.5 text-fg-muted">{t("purchase.yourBalance")}</dt>
-        <dd className="border-t border-line pt-2.5 text-end font-semibold tabular-nums">{formatPrice(balance, payment.currency)}</dd>
+        <dd className="border-t border-line pt-2.5 text-end font-semibold tabular-nums"><Money amount={balance} currency={payment.currency} variant="stack" className="items-end" /></dd>
       </dl>
 
       {notice && <Alert tone="warning">{notice}</Alert>}

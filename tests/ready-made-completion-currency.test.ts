@@ -107,9 +107,9 @@ describe("Display currencies (USD / PKR / INR / BDT) — display only", () => {
     const r = await getDisplayRates();
     expect(r.base).toBe("USD");
     expect(r.rates).toEqual({
-      PKR: { currency: "PKR", rate: 280, source: "configured", updatedAt: null },
-      INR: { currency: "INR", rate: 84, source: "configured", updatedAt: null },
-      BDT: { currency: "BDT", rate: 122, source: "configured", updatedAt: null },
+      PKR: { currency: "PKR", rate: 280, baseRate: 280, markup: 0, source: "configured", updatedAt: null },
+      INR: { currency: "INR", rate: 84, baseRate: 84, markup: 0, source: "configured", updatedAt: null },
+      BDT: { currency: "BDT", rate: 122, baseRate: 122, markup: 0, source: "configured", updatedAt: null },
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });

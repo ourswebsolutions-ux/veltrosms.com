@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { MaintenanceForm, ManualPaymentForm } from "@/components/admin/AdminForms";
+import { CurrencyMarkupForm, MaintenanceForm, ManualPaymentForm } from "@/components/admin/AdminForms";
 import { KeyValues } from "@/components/admin/AdminParts";
 import { SettingsSection } from "@/components/profile/SettingsForms";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { siteConfig } from "@/config/site";
-import { adminSaveMaintenanceAction, adminSaveManualPaymentAction } from "@/server/actions/admin";
+import { adminSaveCurrencyMarkupAction, adminSaveMaintenanceAction, adminSaveManualPaymentAction } from "@/server/actions/admin";
 import { requireAdminPage } from "@/server/admin/guard";
 import { getPlatformSettings } from "@/server/admin/platform";
 
@@ -34,6 +34,13 @@ export default async function AdminSettingsPage() {
           whatsapp={s.manual.whatsapp}
           note={s.manual.note}
         />
+      </SettingsSection>
+      <SettingsSection
+        id="currency-conversion"
+        title="Currency conversion — Conversion Tax / Markup"
+        description="Added to the exchange rate for each display currency (1 USD = base rate + tax), then used for every converted price customers see. It is not added to product prices, and all charges stay in USD."
+      >
+        <CurrencyMarkupForm action={adminSaveCurrencyMarkupAction} rates={s.displayRates} markup={s.currencyMarkup} />
       </SettingsSection>
       <SettingsSection id="environment" title="Configuration" description="Set in the server environment (read-only here). Credentials are never shown.">
         <KeyValues
