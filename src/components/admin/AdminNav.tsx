@@ -19,6 +19,7 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: "/admin/providers", label: "Providers", icon: "cpu" },
   { href: "/admin/pricing", label: "Pricing", icon: "trendingUp" },
   { href: "/admin/custom-margins", label: "Custom Margins", icon: "zap" },
+  { href: "/admin/blog", label: "Blog", icon: "article" },
   { href: "/admin/audit-logs", label: "Audit logs", icon: "shield" },
   { href: "/admin/logs", label: "System logs", icon: "alert" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },

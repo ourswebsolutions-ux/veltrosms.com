@@ -8,10 +8,11 @@ import { formatDateTime, formatShortDateTime, ltr } from "@/lib/format";
  * A date and time in the visitor's language ("Oct 1, 2026, 6:36 PM",
  * "১ অক্টো, ২০২৬, ৬:৩৬ PM", …). English keeps the existing format exactly.
  */
-export function DateTime({ iso, short = false }: { iso: string; short?: boolean }) {
+export function DateTime({ iso, short = false, dateOnly = false }: { iso: string; short?: boolean; /** "October 2, 2026" (articles). */ dateOnly?: boolean }) {
   const { locale } = useLocale();
   let text: string;
-  if (locale === "en") text = short ? formatShortDateTime(iso) : formatDateTime(iso);
+  if (dateOnly) text = new Date(iso).toLocaleDateString(intlLocale(locale), { dateStyle: "long" });
+  else if (locale === "en") text = short ? formatShortDateTime(iso) : formatDateTime(iso);
   else {
     const d = new Date(iso);
     const sameYear = d.getFullYear() === new Date().getFullYear();

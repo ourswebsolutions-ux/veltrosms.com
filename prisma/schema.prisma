@@ -675,3 +675,26 @@ model ReadyMadeOrder {
   @@index([status, createdAt])
   @@map("ready_made_orders")
 }
+
+/// Blog articles managed in Admin → Blog. Public only when published and the
+/// publication date has passed (a future date schedules the post).
+model BlogPost {
+  id            Int       @id @default(autoincrement())
+  title         String    @db.VarChar(200)
+  /// URL part: /blog/<slug>. Lowercase letters, digits and hyphens.
+  slug          String    @unique @db.VarChar(160)
+  excerpt       String    @db.VarChar(500)
+  /// Article body: plain text with a small Markdown subset (## headings, lists, **bold**, [links](url)).
+  content       String    @db.MediumText
+  /// Uploaded image (/media/blog/<file>) or an image URL; null = no image.
+  featuredImage String?   @map("featured_image") @db.VarChar(500)
+  category      String?   @db.VarChar(60)
+  published     Boolean   @default(false)
+  publishedAt   DateTime? @map("published_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([published, publishedAt])
+  @@index([category])
+  @@map("blog_posts")
+}

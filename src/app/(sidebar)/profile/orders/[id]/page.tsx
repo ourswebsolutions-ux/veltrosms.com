@@ -11,7 +11,7 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/cn";
-import { formatPhone } from "@/lib/format";
+import { formatPhone, internationalPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getOrderDetail } from "@/server/services/order.service";
 import { ACTIVE_ORDER_STATUSES } from "@/types/account";
@@ -61,7 +61,7 @@ export default async function OrderPage({ params }: PageProps<"/profile/orders/[
       order.phoneNumber ? (
         <span key="num" className="inline-flex items-center gap-1 font-mono">
           {formatPhone(order.phoneNumber)}
-          <CopyButton value={order.phoneNumber} label={t("order.copyNumber")} className="size-6" />
+          <CopyButton value={internationalPhone(order.phoneNumber)} label={t("order.copyNumber")} className="size-6" />
         </span>
       ) : (
         t("order.notAssigned")

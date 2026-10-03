@@ -10,7 +10,7 @@ import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/cn";
-import { formatPhone, ltr } from "@/lib/format";
+import { formatPhone, internationalPhone, ltr } from "@/lib/format";
 import { SOUND_KEY, usePref } from "@/lib/preferences";
 import { cancelOrderAction, finishOrderAction, requestAnotherSmsAction } from "@/server/actions/orders";
 import type { OrderActionResult } from "@/server/services/order.service";
@@ -147,7 +147,7 @@ export function NumberCard({ order: initial, className }: { order: OrderListItem
             <p className="text-xs text-fg-muted">{t("order.phone")}</p>
             <p className="truncate font-mono text-[17px] font-semibold tabular-nums">{order.phoneNumber ? formatPhone(order.phoneNumber) : "—"}</p>
           </div>
-          {order.phoneNumber && <CopyButton value={order.phoneNumber} label={t("order.copyNumber")} />}
+          {order.phoneNumber && <CopyButton value={internationalPhone(order.phoneNumber)} label={t("order.copyNumber")} />}
         </div>
         <div
           className={cn("flex items-center justify-between gap-2 rounded-lg py-1.5 pe-1.5 ps-3", order.code ? "bg-success-tint" : "bg-surface-muted")}

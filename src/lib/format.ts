@@ -27,8 +27,21 @@ export function formatQty(qty: number): string {
 }
 
 /** Provider numbers are digits with the country code: "15550001000" → "+15550001000". */
+/**
+ * A purchased number in international form ("+923001234567"). Providers return
+ * digits only (stored as-is); this is the single place the "+" is added, used
+ * both for display and for the Copy button so the clipboard matches the screen.
+ */
+export function internationalPhone(phone: string): string {
+  const p = phone.trim();
+  if (p.startsWith("+")) return `+${p.slice(1).replace(/\D/g, "")}`;
+  const digits = p.replace(/[\s().-]/g, "");
+  return /^\d+$/.test(digits) ? `+${digits}` : p;
+}
+
+/** Display form (bidi-isolated, so it reads left-to-right inside Urdu text). */
 export function formatPhone(phone: string): string {
-  return ltr(/^\d+$/.test(phone) ? `+${phone}` : phone);
+  return ltr(internationalPhone(phone));
 }
 
 export function formatPercent(value: number): string {

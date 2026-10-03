@@ -40,6 +40,8 @@ export type NavGroup = {
 export const mainNav: (NavItem | NavGroup)[] = [
   { label: "nav.price", href: "/price" },
   { label: "nav.readyMade", href: "/accounts" },
+  { label: "nav.blog", href: "/blog" },
+  { label: "nav.about", href: "/about" },
   // { label: "API", href: "/api" },
   // { label: "FAQ", href: "/faq" },
   // { label: "Earn with us", href: "/earn-with-us" },
@@ -72,6 +74,9 @@ export const accountNav: NavItem[] = [
 /** Footer: primary product links (one row on desktop, like the reference). */
 export const footerNav: NavItem[] = [
   { label: "nav.price", href: "/price" },
+  { label: "nav.readyMade", href: "/accounts" },
+  { label: "nav.blog", href: "/blog" },
+  { label: "nav.about", href: "/about" },
   // { label: "API", href: "/api" },
   // { label: "FAQ", href: "/faq" },
   // { label: "Earn with us", href: "/earn-with-us" },

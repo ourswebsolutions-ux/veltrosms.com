@@ -32,6 +32,9 @@ const schema = z.object({
   /** Public origin used in emails and redirects, e.g. https://virtumsg.example. */
   APP_URL: z.url().default("http://localhost:3000"),
 
+  /** Where uploaded blog images are stored (served at /media/blog/<file>). Keep it outside the build output. */
+  BLOG_UPLOAD_DIR: z.string().min(1).default(".data/uploads/blog"),
+
   /** Set to true only when running behind a proxy that sets X-Forwarded-For. */
   TRUST_PROXY: bool("false"),
 

@@ -4,7 +4,7 @@ import { hashPassword } from "@/server/auth/password";
 const TABLES = [
   "audit_logs", "payment_events", "sms_messages", "transactions", "service_country_margins", "ready_made_orders", "ready_made_offers", "payments", "orders", "prices", "services", "countries", "wallets",
   "sessions", "auth_tokens", "rate_limits", "partner_applications", "provider_requests",
-  "system_logs", "settings", "users",
+  "system_logs", "settings", "blog_posts", "users",
 ];
 
 /** Empties every table (test database only). */

@@ -6,6 +6,12 @@ import type { SVGProps } from "react";
  */
 const PATHS = {
   chevronDown: <path d="m6 9 6 6 6-6" />,
+  article: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 7h8M8 11h8M8 15h5" />
+    </>
+  ),
   chevronRight: <path d="m9 6 6 6-6 6" />,
   chevronLeft: <path d="m15 6-6 6 6 6" />,
   arrowRight: <path d="M5 12h14m-6-6 6 6-6 6" />,

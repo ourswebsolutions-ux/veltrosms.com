@@ -19,6 +19,8 @@ import {
   updateReadyMadeOffer,
   type ReadyMadeOfferInput,
 } from "@/server/admin/ready-made";
+import { createBlogPost, deleteBlogPost, setBlogPostPublished, updateBlogPost, type BlogInput } from "@/server/admin/blog";
+import { saveBlogImage } from "@/server/blog/images";
 import { createMarginRule, deleteMarginRule, updateMarginRule, type MarginInput } from "@/server/admin/margins";
 import { approveTopUp, rejectTopUp } from "@/server/admin/topups";
 import {
@@ -296,4 +298,61 @@ export async function adminMarginDeleteAction(_prev: FormState, data: FormData):
   const id = intId.safeParse(field(data, "id"));
   if (!id.success) return INVALID;
   return run((a) => deleteMarginRule(a, id.data));
+}
+
+/* ------------------------------------------------------------------ blog -- */
+
+/** Reads the post form. A newly chosen image file wins over the image URL field; "removeImage" clears it. */
+async function blogInput(data: FormData): Promise<{ ok: true; input: BlogInput } | { ok: false; message: string }> {
+  let featuredImage = data.get("removeImage") === "on" ? "" : field(data, "featuredImage").trim().slice(0, 500);
+  const file = data.get("imageFile");
+  if (file instanceof File && file.size > 0) {
+    const saved = await saveBlogImage(file);
+    if (!saved.ok) return saved;
+    featuredImage = saved.url;
+  }
+  return {
+    ok: true,
+    input: {
+      title: field(data, "title").slice(0, 300),
+      slug: field(data, "slug").slice(0, 200),
+      excerpt: field(data, "excerpt").slice(0, 800),
+      content: field(data, "content").slice(0, 210_000),
+      category: field(data, "category").slice(0, 100),
+      featuredImage,
+      publishedAt: field(data, "publishedAt").slice(0, 40),
+      intent: field(data, "intent") === "publish" ? "publish" : "draft",
+    },
+  };
+}
+
+export async function adminBlogCreateAction(_prev: FormState, data: FormData): Promise<FormState> {
+  if (!(await getAdminActor())) return DENIED;
+  const parsed = await blogInput(data);
+  if (!parsed.ok) return { status: "error", message: parsed.message };
+  const result = await run((a) => createBlogPost(a, parsed.input));
+  return result.status === "success" ? { ...result, redirectTo: "/admin/blog" } : result;
+}
+
+export async function adminBlogUpdateAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  if (!id.success) return INVALID;
+  if (!(await getAdminActor())) return DENIED;
+  const parsed = await blogInput(data);
+  if (!parsed.ok) return { status: "error", message: parsed.message };
+  const result = await run((a) => updateBlogPost(a, id.data, parsed.input));
+  return result.status === "success" ? { ...result, redirectTo: "/admin/blog" } : result;
+}
+
+export async function adminBlogPublishAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  const publish = z.enum(["true", "false"]).safeParse(field(data, "publish"));
+  if (!id.success || !publish.success) return INVALID;
+  return run((a) => setBlogPostPublished(a, id.data, publish.data === "true"));
+}
+
+export async function adminBlogDeleteAction(_prev: FormState, data: FormData): Promise<FormState> {
+  const id = intId.safeParse(field(data, "id"));
+  if (!id.success) return INVALID;
+  return run((a) => deleteBlogPost(a, id.data));
 }

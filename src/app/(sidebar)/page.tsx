@@ -10,14 +10,16 @@ import { CountryFlag, ServiceAvatar } from "@/components/ui/CatalogVisuals";
 import { AccordionItem } from "@/components/ui/Accordion";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
-import { siteConfig } from "@/config/site";
 import { FAQ } from "@/content/faq";
 import { getT } from "@/i18n/server";
 import type { MessageKey, Translator } from "@/i18n/translate";
 import { getPopularOffers, listCountries, listServices } from "@/server/services/catalog.service";
+import { AboutService } from "@/components/home/AboutService";
+import { BlogCard } from "@/components/blog/BlogCard";
+import { listPublishedPosts } from "@/server/services/blog.service";
 
 export default async function HomePage() {
-  const [popular, services, countries, t] = await Promise.all([getPopularOffers(), listServices(), listCountries(), getT()]);
+  const [popular, services, countries, t, latest] = await Promise.all([getPopularOffers(), listServices(), listCountries(), getT(), listPublishedPosts({ pageSize: 3 })]);
 
   return (
     <>
@@ -78,21 +80,25 @@ export default async function HomePage() {
 
       <Benefits t={t} />
 
-      <Card className="border border-line bg-[linear-gradient(180deg,var(--color-surface-sunken)_0%,var(--color-surface-muted)_40%)] shadow-none">
-        <p className="text-lg font-medium text-primary">{t("home.about")}</p>
-        <h2 className="mt-1 text-2xl font-semibold sm:text-[28px]">{t("home.aboutTitle")}</h2>
-        <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-fg-muted">
-          <p>{t("home.aboutP1", { name: siteConfig.name })}</p>
-          <p className="font-semibold text-fg">{t("home.whyTitle")}</p>
-          <p>{t("home.whyP")}</p>
-        </div>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <ButtonLink href="/register">{t("home.createFree")}</ButtonLink>
-          <ButtonLink href="/price" variant="outline">
-            {t("home.viewPrices")}
-          </ButtonLink>
-        </div>
-      </Card>
+      <AboutService t={t} />
+
+      {latest.posts.length > 0 && (
+        <section aria-labelledby="latest-blog" className="space-y-3">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <h2 id="latest-blog" className="text-[26px] font-semibold tracking-tight sm:text-[32px]">
+              {t("blog.latest")}
+            </h2>
+            <ButtonLink href="/blog" size="sm" variant="ghost">
+              {t("blog.allPosts")} <Icon name="arrowRight" size={16} />
+            </ButtonLink>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+            {latest.posts.map((post) => (
+              <BlogCard key={post.id} post={post} t={t} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <FaqPreview t={t} />
 
