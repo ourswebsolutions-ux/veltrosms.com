@@ -35,6 +35,15 @@ const schema = z.object({
   /** Where uploaded blog images are stored (served at /media/blog/<file>). Keep it outside the build output. */
   BLOG_UPLOAD_DIR: z.string().min(1).default(".data/uploads/blog"),
 
+  /**
+   * Emergency admin recovery (/hidden): the owner's permanent secret, entered
+   * on that page. At least 64 characters (`openssl rand -hex 32`); unset or
+   * shorter → recovery is off. See src/server/admin/recovery.ts.
+   */
+  ADMIN_RECOVERY_SECRET: z.string().optional(),
+  /** Optional: comma-separated client IPs allowed to use /hidden (needs TRUST_PROXY=true). */
+  ADMIN_RECOVERY_ALLOWED_IPS: z.string().optional(),
+
   /** Set to true only when running behind a proxy that sets X-Forwarded-For. */
   TRUST_PROXY: bool("false"),
 

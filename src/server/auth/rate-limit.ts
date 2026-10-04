@@ -30,6 +30,9 @@ export const RATE_LIMITS = {
   adminActionsPerAdmin: { limit: 120, windowSeconds: 60 },
   /** Public API calls per API key. */
   apiPerKey: { limit: 120, windowSeconds: 60 },
+  /** Emergency admin recovery attempts per IP, and across all clients (holds even without TRUST_PROXY). */
+  adminRecoveryPerIp: { limit: 5, windowSeconds: 15 * 60 },
+  adminRecoveryGlobal: { limit: 20, windowSeconds: 60 * 60 },
   /** Per IP: the footer "active" chatbot switch (it needs no login). */
   chatbotActivatePerIp: { limit: 10, windowSeconds: 60 },
 } satisfies Record<string, RateLimitRule>;
