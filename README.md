@@ -107,3 +107,4 @@ Tokens in `src/app/globals.css`; components in `src/components/{ui,layout,market
 - Keep the SMS provider account funded; check Admin → Providers.
 # vritumsg-project
 # vritumsg-project
+# veltrosms.com
