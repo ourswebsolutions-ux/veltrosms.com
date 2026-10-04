@@ -13,7 +13,7 @@ import { EmptyState, ErrorState } from "@/components/ui/States";
 import { SegmentedTabs } from "@/components/ui/Tabs";
 import { Table, TBody, Td, Th, THead, Tr, type SortDirection } from "@/components/ui/Table";
 import { cn } from "@/lib/cn";
-import { formatCount } from "@/lib/format";
+import { formatCount, formatCountCompact } from "@/lib/format";
 import { parseAmount } from "@/lib/money";
 import type { Availability, CountrySummary, OfferGroup, Result, ServiceSummary } from "@/types/catalog";
 import { CountrySelector } from "./CountrySelector";
@@ -327,7 +327,7 @@ export function PriceExplorer({
                     </span>
                     <span className="mt-1 grid grid-cols-[1fr_1.4fr_1.2fr] text-[15px] tabular-nums">
                       <Money amount={g.minPrice} currency={g.currency} />
-                      <span>{formatCount(g.totalAvailable)}</span>
+                      <span>{formatCountCompact(g.totalAvailable)}</span>
                       <StatusDot tone={AVAILABILITY_LABEL[g.availability].tone}>
                         {t(AVAILABILITY_LABEL[g.availability].label)}
                       </StatusDot>

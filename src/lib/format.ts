@@ -22,6 +22,16 @@ export function formatCount(n: number): string {
   return ltr(qtyFormatter.format(n));
 }
 
+/**
+ * Compact count for narrow screens: below 1,000 as-is, otherwise whole
+ * thousands + "K", rounded down so stock is never overstated
+ * (1,000 → "1K", 12,000 → "12K", 17,923,220 → "17,923K", 999 → "999").
+ */
+export function formatCountCompact(n: number): string {
+  if (Math.abs(n) < 1000) return formatCount(n);
+  return ltr(`${qtyFormatter.format(Math.trunc(n / 1000))}K`);
+}
+
 export function formatQty(qty: number): string {
   return `${qtyFormatter.format(qty)} qty`;
 }
