@@ -20,6 +20,7 @@ import {
 } from "@/server/services/payment.service";
 import { invalidateProviderBalance } from "@/server/services/provider-health.service";
 import { getBalance } from "@/server/services/wallet.service";
+import { clearSettingsCache, saveSetting } from "@/server/services/settings.service";
 import { FakePaymentProvider } from "./fake-payment-provider";
 import { FakeProvider } from "./fake-provider";
 import { createUser, resetDatabase, USD } from "./helpers";
@@ -48,6 +49,9 @@ function setEnv(values: Record<string, string>) {
 
 beforeEach(async () => {
   await resetDatabase();
+  clearSettingsCache();
+  // These tests use small top-ups; the admin-set minimum has its own tests (topup-minimum.test.ts).
+  await saveSetting("topup", { minAmount: "1" });
   pay = new FakePaymentProvider();
   setPaymentProviderForTesting(pay);
 });

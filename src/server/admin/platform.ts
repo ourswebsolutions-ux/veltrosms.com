@@ -596,10 +596,11 @@ export async function listLogs(kind: LogKind, filter: LogFilter = {}): Promise<A
 /* -------------------------------------------------------------- settings -- */
 
 export async function getPlatformSettings() {
-  const [maintenance, manual, currencyMarkup, displayRates] = await Promise.all([
+  const [maintenance, manual, currencyMarkup, topup, displayRates] = await Promise.all([
     getSetting("maintenance"),
     getSetting("manual_payment"),
     getSetting("currency_markup"),
+    getSetting("topup"),
     getDisplayRates(),
   ]);
   const e = env();
@@ -607,6 +608,7 @@ export async function getPlatformSettings() {
     maintenance,
     manual,
     currencyMarkup,
+    topup: { minAmount: topup.minAmount, maxAmount: e.TOPUP_MAX_AMOUNT },
     displayRates,
     info: {
       currency: e.PLATFORM_CURRENCY,
@@ -637,6 +639,31 @@ export async function saveManualPayment(actor: AdminActor, input: ManualPaymentS
   const saved = await saveSetting("manual_payment", { accountName, accountNumber, whatsapp, note: input.note.trim() });
   await audit(actor, "manual_payment.update", { type: "setting", id: "manual_payment" }, true, { before, after: saved }, `Manual payment details changed to ${saved.accountName} · ${saved.accountNumber}`);
   return { ok: true, message: "Payment details saved." };
+}
+
+/**
+ * Smallest top-up customers may request (platform currency). Applies to every
+ * new request from the moment it is saved; existing requests are unaffected.
+ */
+export async function saveTopUpMinimum(actor: AdminActor, input: { minAmount: string }): Promise<AdminResult> {
+  const v = input.minAmount.trim().replace(",", ".");
+  const max = env().TOPUP_MAX_AMOUNT;
+  const currency = env().PLATFORM_CURRENCY;
+  if (!/^\d{1,9}(\.\d{1,2})?$/.test(v) || !(Number(v) > 0) || Number(v) > Number(max)) {
+    return { ok: false, message: `Enter the minimum top-up as an amount above 0 and up to ${max} ${currency} (at most 2 decimals), e.g. 10 or 7.50.` };
+  }
+  const minAmount = String(Number(v)); // "07.50" → "7.5"
+  const before = await getSetting("topup");
+  const saved = await saveSetting("topup", { minAmount });
+  await audit(
+    actor,
+    "topup_minimum.update",
+    { type: "setting", id: "topup" },
+    true,
+    { before, after: saved },
+    `Minimum top-up changed from ${before.minAmount} to ${saved.minAmount} ${currency}`,
+  );
+  return { ok: true, message: `Minimum top-up saved: ${saved.minAmount} ${currency}. It applies to new top-up requests now.` };
 }
 
 /** Max conversion tax / markup per currency (in units of that currency). */

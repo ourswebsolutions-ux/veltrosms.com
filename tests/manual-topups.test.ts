@@ -39,6 +39,8 @@ async function admin() {
 beforeEach(async () => {
   await resetDatabase();
   clearSettingsCache();
+  // These tests use small top-ups; the admin-set minimum has its own tests (topup-minimum.test.ts).
+  await saveSetting("topup", { minAmount: "1" });
   setPaymentProviderForTesting(new ManualPaymentProvider());
 });
 afterEach(() => {

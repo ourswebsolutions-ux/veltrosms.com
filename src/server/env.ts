@@ -87,8 +87,7 @@ const schema = z.object({
   PAYMENT_PROVIDER: z.enum(["manual", "none"]).default("manual"),
   /** Where new manual top-up requests are announced (optional; they always appear in /admin/topups). */
   ADMIN_NOTIFY_EMAIL: z.email().optional(),
-  /** Top-up limits in the platform currency (whole cents). */
-  TOPUP_MIN_AMOUNT: decimalAmount.default("1"),
+  /** Largest top-up, in the platform currency (whole cents). The minimum is an admin setting (Admin → Settings). */
   TOPUP_MAX_AMOUNT: decimalAmount.default("1000"),
   /** Gateway (redirect) providers only — manual top-ups carry no fee. Percent (up to 2 decimals) plus a fixed part. */
   TOPUP_FEE_PERCENT: z.string().regex(/^\d{1,2}(\.\d{1,2})?$/, "Percent like 2.5").default("0"),
@@ -112,9 +111,7 @@ const schema = z.object({
 /** Cross-field rules. */
 function checkPayments(e: z.infer<typeof schema>): string[] {
   const issues: string[] = [];
-  const min = Number(e.TOPUP_MIN_AMOUNT);
-  const max = Number(e.TOPUP_MAX_AMOUNT);
-  if (!(min > 0) || max < min) issues.push("  TOPUP_MIN_AMOUNT/TOPUP_MAX_AMOUNT: need 0 < min <= max");
+  if (!(Number(e.TOPUP_MAX_AMOUNT) > 0)) issues.push("  TOPUP_MAX_AMOUNT: must be above 0");
   return issues;
 }
 

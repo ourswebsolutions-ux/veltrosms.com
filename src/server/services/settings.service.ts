@@ -24,6 +24,17 @@ const PricingSchema = z.object({
 });
 
 /**
+ * Smallest top-up a customer may request, in the platform currency (whole
+ * cents, above zero). Applies to every new top-up request, manual or gateway.
+ */
+const TopUpSchema = z.object({
+  minAmount: z
+    .string()
+    .regex(/^\d{1,9}(\.\d{1,2})?$/)
+    .refine((v) => Number(v) > 0),
+});
+
+/**
  * Conversion tax / markup per display currency, in units of that currency,
  * ADDED TO THE EXCHANGE RATE (1 USD = base + markup). Display only — never
  * changes a stored price or a charge. "0" = the plain exchange rate.
@@ -37,12 +48,14 @@ const ChatbotSubscriptionSchema = z.object({ activatedAt: z.iso.datetime().nulla
 export type MaintenanceSetting = z.infer<typeof MaintenanceSchema>;
 export type ManualPaymentSetting = z.infer<typeof ManualPaymentSchema>;
 export type PricingSetting = z.infer<typeof PricingSchema>;
+export type TopUpSetting = z.infer<typeof TopUpSchema>;
 export type CurrencyMarkupSetting = z.infer<typeof CurrencyMarkupSchema>;
 
 const SCHEMAS = {
   maintenance: MaintenanceSchema,
   manual_payment: ManualPaymentSchema,
   pricing: PricingSchema,
+  topup: TopUpSchema,
   currency_markup: CurrencyMarkupSchema,
   chatbot_subscription: ChatbotSubscriptionSchema,
 } as const;
@@ -55,6 +68,7 @@ const DEFAULTS: { [K in Key]: () => Value<K> } = {
   manual_payment: () => ({ accountName: "Muhammad Usman", accountNumber: "03246623395", whatsapp: siteConfig.supportWhatsApp, note: "" }),
   currency_markup: () => ({ PKR: "0", INR: "0", BDT: "0" }),
   chatbot_subscription: () => ({ activatedAt: null, expiresAt: null }),
+  topup: () => ({ minAmount: "10" }),
   pricing: () => ({ markupPercent: String(env().PRICE_MARKUP_PERCENT), minMargin: String(env().PRICE_MIN_MARGIN) }),
 };
 

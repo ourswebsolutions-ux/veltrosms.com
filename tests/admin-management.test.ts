@@ -28,7 +28,7 @@ import { customerPrice } from "@/server/services/currency";
 import { requestNumber } from "@/server/services/order.service";
 import { createManualTopUp } from "@/server/services/payment.service";
 import { invalidateProviderBalance } from "@/server/services/provider-health.service";
-import { clearSettingsCache } from "@/server/services/settings.service";
+import { clearSettingsCache, saveSetting } from "@/server/services/settings.service";
 import { creditWallet, getBalance } from "@/server/services/wallet.service";
 import { FakeProvider } from "./fake-provider";
 import { createUser, resetDatabase, USD } from "./helpers";
@@ -69,6 +69,8 @@ const call = async (handler: unknown, token: string, id: string, body: unknown) 
 beforeEach(async () => {
   await resetDatabase();
   clearSettingsCache();
+  // These tests use small top-ups; the admin-set minimum has its own tests (topup-minimum.test.ts).
+  await saveSetting("topup", { minAmount: "1" });
   testOutbox.length = 0;
   setProviderForTesting(new FakeProvider());
   invalidateProviderBalance();

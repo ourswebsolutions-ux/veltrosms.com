@@ -677,6 +677,21 @@ export function CustomMarginDialog({
  * RATE (1 USD = base + tax) and then used for every converted price on the
  * site — not added to a product price. Display only; charges stay in USD.
  */
+/** Smallest top-up customers may request. Checked again on the server. */
+export function TopUpMinimumForm({ action, minAmount, maxAmount, currency }: { action: Action; minAmount: string; maxAmount: string; currency: string }) {
+  const [state, run] = useFormAction(action);
+  useResultToast(state);
+  return (
+    <form action={run} className="space-y-4">
+      <Field label={`Minimum top-up (${currency})`} required hint={`Above 0 and up to ${maxAmount} ${currency}, at most 2 decimals. Applies to new top-up requests.`}>
+        {(p) => <Input {...p} name="minAmount" inputMode="decimal" defaultValue={minAmount} maxLength={12} className="max-w-48 tabular-nums" />}
+      </Field>
+      <FormMessage state={state} />
+      <SubmitButton>Save minimum</SubmitButton>
+    </form>
+  );
+}
+
 export function CurrencyMarkupForm({ action, rates, markup }: { action: Action; rates: DisplayRates; markup: Record<"PKR" | "INR" | "BDT", string> }) {
   const [state, run] = useFormAction(action);
   useResultToast(state);

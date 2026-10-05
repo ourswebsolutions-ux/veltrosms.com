@@ -9,6 +9,7 @@ import {
   savePricing,
   saveManualPayment,
   saveCurrencyMarkup,
+  saveTopUpMinimum,
   setCatalogItemActive,
   setServicePopular,
   triggerCatalogSync,
@@ -211,6 +212,10 @@ export async function adminSaveManualPaymentAction(_prev: FormState, data: FormD
       note: field(data, "note").slice(0, 200),
     }),
   );
+}
+
+export async function adminSaveTopUpMinimumAction(_prev: FormState, data: FormData): Promise<FormState> {
+  return run((a) => saveTopUpMinimum(a, { minAmount: field(data, "minAmount").slice(0, 20) }));
 }
 
 export async function adminSaveCurrencyMarkupAction(_prev: FormState, data: FormData): Promise<FormState> {

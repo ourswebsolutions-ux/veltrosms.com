@@ -60,7 +60,6 @@ export type TopUpResult =
 function limits() {
   const e = env();
   return {
-    min: toMinor(e.TOPUP_MIN_AMOUNT),
     max: toMinor(e.TOPUP_MAX_AMOUNT),
     // "2.5" % → 250 basis points (exact: at most 2 decimals).
     feeBps: toMinor(e.TOPUP_FEE_PERCENT) / 100,
@@ -68,6 +67,12 @@ function limits() {
     feePercent: e.TOPUP_FEE_PERCENT,
     currency: platformCurrency().code,
   };
+}
+
+/** Limits for a new top-up: the minimum is the admin setting (Admin → Settings), read per request. */
+async function topUpLimits() {
+  const { minAmount } = await getSetting("topup");
+  return { ...limits(), min: toMinor(minAmount) };
 }
 
 /** Fee for a top-up: percent part rounded up to a whole cent, plus the fixed part. */
@@ -78,7 +83,7 @@ export function topUpFee(amount: number): number {
 
 export async function getTopUpOptions(): Promise<TopUpOptions> {
   const provider = getPaymentProvider();
-  const l = limits();
+  const l = await topUpLimits();
   const methods = provider?.methods() ?? [];
   const manual = provider?.flow === "manual";
   const details = manual ? await getSetting("manual_payment") : null;
@@ -169,7 +174,7 @@ export async function createTopUp(
     return { ok: false, code: "INVALID", message: "Choose a payment method." };
   }
 
-  const l = limits();
+  const l = await topUpLimits();
   const amount = parseAmount(input.amount.trim().replace(",", "."));
   if (amount === null || amount % CENT !== 0) {
     return { ok: false, code: "INVALID", message: "Enter an amount like 10 or 12.50." };
@@ -559,7 +564,7 @@ export async function createManualTopUp(
   if (!provider || provider.flow !== "manual") return { ok: false, code: "UNAVAILABLE", message: "Manual top-ups aren't available right now." };
   if (!provider.methods().some((m) => m.id === input.method)) return { ok: false, code: "INVALID", message: "Choose Easypaisa or JazzCash." };
 
-  const l = limits();
+  const l = await topUpLimits();
   const amount = parseAmount(input.amount.trim().replace(",", "."));
   if (amount === null || amount % CENT !== 0) return { ok: false, code: "INVALID", message: "Enter an amount like 10 or 12.50." };
   if (amount < l.min || amount > l.max) {

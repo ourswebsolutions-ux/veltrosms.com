@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { CurrencyMarkupForm, MaintenanceForm, ManualPaymentForm } from "@/components/admin/AdminForms";
+import { CurrencyMarkupForm, MaintenanceForm, ManualPaymentForm, TopUpMinimumForm } from "@/components/admin/AdminForms";
 import { KeyValues } from "@/components/admin/AdminParts";
 import { SettingsSection } from "@/components/profile/SettingsForms";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { siteConfig } from "@/config/site";
-import { adminSaveCurrencyMarkupAction, adminSaveMaintenanceAction, adminSaveManualPaymentAction } from "@/server/actions/admin";
+import { adminSaveCurrencyMarkupAction, adminSaveMaintenanceAction, adminSaveManualPaymentAction, adminSaveTopUpMinimumAction } from "@/server/actions/admin";
 import { requireAdminPage } from "@/server/admin/guard";
 import { getPlatformSettings } from "@/server/admin/platform";
 
@@ -34,6 +34,9 @@ export default async function AdminSettingsPage() {
           whatsapp={s.manual.whatsapp}
           note={s.manual.note}
         />
+      </SettingsSection>
+      <SettingsSection id="topup-minimum" title="Top-ups" description="The smallest amount customers can add to their balance. Shown on Add funds and enforced on every new top-up request.">
+        <TopUpMinimumForm action={adminSaveTopUpMinimumAction} minAmount={s.topup.minAmount} maxAmount={s.topup.maxAmount} currency={s.info.currency} />
       </SettingsSection>
       <SettingsSection
         id="currency-conversion"
